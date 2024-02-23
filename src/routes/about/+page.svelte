@@ -43,7 +43,7 @@
   <h1 class="text-2xl font-bold leading-8">Credits</h1>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <Profile
-      avatar="https://lemmy.xylight.dev/pictrs/image/3281f13c-68bb-47c9-8c98-b67f67714d5a.png?format=webp&thumbnail=128"
+      avatar="https://avatars.githubusercontent.com/u/80978739?v=4"
       description="Main developer"
       name="Xylight"
       class="sm:col-span-3 place-self-center"

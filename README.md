@@ -46,15 +46,18 @@ There you go, you now have an instance of Photon running.
 
 ### Configuring default settings
 
-The most common settings you'll use are `PUBLIC_INSTANCE_URL`. Some selfhosters with `PUBLIC_SSR_ENABLED` set to true might want the instance url to be different for the server. You can use the `PUBLIC_INTERNAL_INSTANCE` variable for that.
+The most common settings you'll use are `PUBLIC_INSTANCE_URL`. Some selfhosters with `PUBLIC_SSR_ENABLED` set to true
+might want the instance url to be different for the server. You can use the `PUBLIC_INTERNAL_INSTANCE` variable for
+that.
 
-`PUBLIC_MIGRATE_COOKIE` is useful if you want to switch Photon to your default frontend. It'll convert the logged in cookie from lemmy-ui to a Photon account. It will only work if you have `PUBLIC_INSTANCE_URL` set, and it will login with that instance.
+`PUBLIC_MIGRATE_COOKIE` is useful if you want to switch Photon to your default frontend. It'll convert the logged in
+cookie from lemmy-ui to a Photon account. It will only work if you have `PUBLIC_INSTANCE_URL` set, and it will login
+with that instance.
 
 The following environment variables can be set to override the default settings:
 
-
 | Variable                        | Values              | Default Value                          |
-| ------------------------------- | ------------------- | -------------------------------------- |
+|---------------------------------|---------------------|----------------------------------------|
 | PUBLIC_INSTANCE_URL             | URL                 | `lemmy.ml`                             |
 | PUBLIC_INTERNAL_INSTANCE        | URL?                | null                                   |
 | PUBLIC_LOCK_TO_INSTANCE         | `bool`              | `true` if `PUBLIC_INSTANCE_URL` is set |
@@ -133,16 +136,16 @@ Want your instance added here? Make a GitHub issue or make a PR! (this is for ge
 
 [phtn.app](https://phtn.app) is the official instance and will get updates instantly.
 
-
-| Instance                                                                             | Location    | Contact                                                                            |
-| --------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| [phtn.app (Official)](https://phtn.app)                                                 | 🇺🇸 US West   | [photon@xylight.dev](mailto:photon@xylight.dev)                                       |
+| Instance                                                                                | Location       | Contact                                                                               |
+|-----------------------------------------------------------------------------------------|----------------|---------------------------------------------------------------------------------------|
+| [phtn.app (Official)](https://phtn.app)                                                 | 🇺🇸 US West   | [photon@xylight.dev](mailto:photon@xylight.dev)                                       | 
+| [lemdro.id](https://lemdro.id)                                                          | Global         | [support@lemdro.id](mailto:support@lemdro.id)                                         |
 | [ph.opnxng.com](https://ph.opnxng.com)                                                  | 🇸🇬 Singapore | [about.opnxng.com](https://about.opnxng.com)                                          |
 | [photon.thesanewriter.com](https://photon.thesanewriter.com)                            | 🇺🇸 US East   | [thesanewriter@lemmy.thesanewriter.com](mailto:thesanewriter@lemmy.thesanewriter.com) |
 | [p.lemmy.ohaa.xyz](https://p.lemmy.ohaa.xyz)                                            | 🇦🇹 Austria   | (???)                                                                                 |
 | [~~photon.zhenyapav.com~~ (Has not updated since v1.9.2)](https://photon.zhenyapav.com) | 🇮🇸 Iceland   | [zhenyapav@zhenyapav.com](mailto:zhenyapav@zhenyapav.com)                             |
 | [~~ph.buckodr.ink~~ (Has not updated since v1.21.1)](https://ph.buckodr.ink)            | 🇺🇸 US East   | [admin@buckodr.ink](mailto:admin@buckodr.ink)                                         |
-| [phtn.ngn.tf](https://phtn.ngn.tf)                                                      | 🇹🇷 Turkey    | [services@ngn.tf](mailto:services@ngn.tf)
+| [phtn.ngn.tf](https://phtn.ngn.tf)                                                      | 🇹🇷 Turkey    | [services@ngn.tf](mailto:services@ngn.tf)                                             |
 
 ## Donate
 
