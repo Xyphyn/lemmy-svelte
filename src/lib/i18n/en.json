@@ -60,7 +60,8 @@
         "moveUp": "Move Up",
         "moveDown": "Move Down",
         "guest": "Guest",
-        "versionGate": "This version of Photon supports instances running {{version}} or higher."
+        "versionGate": "This version of Photon supports instances running {{version}} or higher.",
+        "checkInboxes": "Check all inboxes"
     },
     "filter": {
         "location": {

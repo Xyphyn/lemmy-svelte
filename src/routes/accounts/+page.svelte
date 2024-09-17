@@ -14,7 +14,7 @@
   import { DEFAULT_INSTANCE_URL, LINKED_INSTANCE_URL } from '$lib/instance.js'
   import ProfileAvatar from '$lib/lemmy/ProfileAvatar.svelte'
   import { userSettings } from '$lib/settings.js'
-  import { Button, TextInput } from 'mono-svelte'
+  import { Button, Badge, Spinner } from 'mono-svelte'
   import {
     ArrowLeftOnRectangle,
     ArrowRightOnRectangle,
@@ -29,13 +29,16 @@
     Identification,
     PaintBrush,
     Plus,
+    Inbox,
   } from 'svelte-hero-icons'
   import { flip } from 'svelte/animate'
   import { expoOut } from 'svelte/easing'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import FilterTabs from '$lib/components/ui/tabs/FilterTabs.svelte'
-  import { fly } from 'svelte/transition'
+  import { fly, slide } from 'svelte/transition'
+  import { client } from '$lib/lemmy'
+  import ProgressBar from '$lib/components/ui/ProgressBar.svelte'
 
   let debugging = false
   let debugProfile: Profile | undefined = undefined
@@ -46,6 +49,42 @@
   }
 
   let switching = -2
+
+  let notifications: Map<number, number | null> = new Map()
+  let checking = false
+  let progress = 0
+  async function checkAllInboxes() {
+    const profiles = $profileData.profiles.filter((i) => i.jwt != undefined)
+    progress = 0
+
+    await Promise.all(
+      profiles.map(
+        (profile) =>
+          new Promise(async (res, rej) => {
+            notifications.set(profile.id, null)
+            const response = await client({
+              auth: profile.jwt,
+              instanceURL: profile.instance,
+            }).getUnreadCount()
+
+            progress += 1 / profiles.length
+            progress = progress
+
+            notifications.set(
+              profile.id,
+              response.mentions + response.private_messages + response.replies
+            )
+            notifications = notifications
+
+            res(
+              response.mentions + response.private_messages + response.replies
+            )
+          })
+      )
+    )
+
+    progress = 0
+  }
 </script>
 
 <svelte:head>
@@ -130,8 +169,8 @@
     <Header pageHeader>
       {$t('routes.accounts')}
       <div class="flex" slot="extended">
-        <div class="flex gap-2 mr-auto">
-          <Button href="/login" size="lg" class="flex-1 px-8" color="primary">
+        <div class="flex gap-2 mr-auto flex-wrap">
+          <Button href="/login" size="lg" class="px-8" color="primary">
             <Icon slot="prefix" src={ArrowLeftOnRectangle} size="16" mini />
             {$t('account.login')}
           </Button>
@@ -141,9 +180,25 @@
               {$t('account.addGuest')}
             </Button>
           {/if}
+          {#if $profileData.profiles.length > 1}
+            <Button
+              loading={checking}
+              disabled={checking}
+              on:click={checkAllInboxes}
+              size="lg"
+            >
+              <Icon slot="prefix" src={Inbox} size="16" mini />
+              {$t('account.checkInboxes')}
+            </Button>
+          {/if}
         </div>
       </div>
     </Header>
+    {#if progress != 0}
+      <div class="w-full h-1" transition:slide={{ axis: 'y' }}>
+        <ProgressBar bind:progress />
+      </div>
+    {/if}
     <FilterTabs items={$profileData.profiles} id={(i) => i.instance} let:items>
       <EditableList
         on:action={(acc) => {
@@ -155,7 +210,6 @@
         {#each items as profile, index (profile.id)}
           <div
             class="flex flex-row gap-2 items-center py-3"
-            transition:fly={{ duration: 500, y: -12, easing: expoOut }}
             animate:flip={{ duration: 500, easing: expoOut }}
           >
             <Button
@@ -210,7 +264,20 @@
                 </span>
               </div>
             </div>
-            <div class="ml-auto" />
+            <div class="flex-1" />
+            {#if typeof notifications.get(profile.id) !== 'undefined'}
+              {@const count = notifications.get(profile.id)}
+              {#if count === null}
+                <Spinner width={20} />
+              {:else if count ?? 0 > 0}
+                <Badge
+                  class="w-6 h-6 grid place-items-center !p-0"
+                  color="red-subtle"
+                >
+                  {count}
+                </Badge>
+              {/if}
+            {/if}
             <Menu placement="bottom-end">
               <Button size="square-md" slot="target">
                 <Icon src={EllipsisHorizontal} mini size="16" slot="prefix" />
