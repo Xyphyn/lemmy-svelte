@@ -460,6 +460,12 @@
         {/each}
       </div>
     </Setting>
+    <ToggleSetting
+      title={$t('settings.navigation.altMenu.title')}
+      description={$t('settings.navigation.altMenu.description')}
+      bind:checked={$userSettings.dock.altMenu}
+      beta
+    />
   </Section>
 
   <Section id="embeds" title={$t('settings.embeds.title')}>

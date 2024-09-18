@@ -1,4 +1,5 @@
 import { profile } from '$lib/auth.js'
+import { FeedLayer } from '$lib/components/ui/navbar/layers/index.js'
 import { publishedToDate } from '$lib/components/util/date.js'
 import { getClient } from '$lib/lemmy.js'
 import {
@@ -64,5 +65,10 @@ export async function load({ url, fetch }) {
     page: page,
     data: data,
     limit: 20,
+    slots: {
+      nav: {
+        component: FeedLayer,
+      },
+    },
   }
 }

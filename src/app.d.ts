@@ -15,6 +15,10 @@ declare global {
           component?: ComponentType
           props?: any
         }
+        nav?: {
+          component: ComponentType
+          props?: any
+        }
       }
     }
     interface PageState {

@@ -57,34 +57,7 @@
 {/if}
 
 <Menu {...$$restProps}>
-  <button
-    class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-zinc-700
-    transition-all bg-slate-50 dark:bg-zinc-900 relative
-    hover:border-primary-900 hover:dark:border-primary-100 active:scale-95 {$$props.buttonClass}"
-    title={$t('profile.profile')}
-    slot="target"
-  >
-    {#if $profile?.user}
-      <div
-        class="w-full h-full aspect-square object-cover rounded-full grid place-items-center"
-      >
-        <Avatar
-          url={$profile.user.local_user_view.person.avatar}
-          width={36}
-          alt={$profile.user.local_user_view.person.name}
-        />
-      </div>
-      {#if $notifications.inbox > 0}
-        <div
-          class="rounded-full w-2 h-2 bg-red-500 absolute top-0 left-0 z-10"
-        />
-      {/if}
-    {:else}
-      <div class="w-full h-full grid place-items-center">
-        <Icon src={Bars3} micro size="18" />
-      </div>
-    {/if}
-  </button>
+  <slot name="target" slot="target" />
   {#if $profile?.user}
     <UserLink
       user={$profile?.user.local_user_view.person}

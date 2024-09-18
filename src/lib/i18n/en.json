@@ -657,6 +657,10 @@
             "pins": {
                 "title": "Pins",
                 "description": "Click a pin to send it to the top of the sidebar. Right click a pinned item to remove it."
+            },
+            "altMenu": {
+                "title": "Contextual menu",
+                "description": "Add contextual actions to the main menu and open the main menu inside the dock itself."
             }
         },
         "app": {

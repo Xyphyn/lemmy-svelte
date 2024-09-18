@@ -35,6 +35,7 @@
   on:change={() => {
     if (navigate) searchParam($page.url, 'type', feed, 'page', 'cursor')
   }}
+  aria-label={$t('filter.location.label')}
 >
   <svelte:fragment slot="label">
     {#if showLabel}

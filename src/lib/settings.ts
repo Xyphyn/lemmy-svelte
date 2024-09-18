@@ -87,6 +87,7 @@ interface Settings {
     noGap: boolean | null
     top: boolean | null
     pins: Link[]
+    altMenu: boolean
   }
   posts: {
     deduplicateEmbed: boolean
@@ -167,6 +168,7 @@ export const defaultSettings: Settings = {
     noGap: toBool(env.PUBLIC_DOCK_PANEL) ?? null,
     top: toBool(env.PUBLIC_DOCK_TOP) ?? null,
     pins: [],
+    altMenu: false,
   },
   posts: {
     deduplicateEmbed: toBool(env.PUBLIC_DEDUPLICATE_EMBED) ?? true,
