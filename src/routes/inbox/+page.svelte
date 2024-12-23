@@ -13,10 +13,10 @@
   import { goto } from '$app/navigation'
   import { page } from '$app/stores'
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { notifications, profile } from '$lib/auth.js'
+  import { notifications, profile } from '$lib/auth.svelte.js'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { fly } from 'svelte/transition'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import { Button, Select } from 'mono-svelte'
   import EndPlaceholder from '$lib/components/ui/EndPlaceholder.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
@@ -25,9 +25,9 @@
   import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { expoOut } from 'svelte/easing'
 
-  export let data
+  let { data } = $props()
 
-  let markingAsRead = false
+  let markingAsRead = $state(false)
 
   async function markAllAsRead() {
     if (!$profile?.user) {
@@ -52,7 +52,7 @@
 
   function addSearchParam(
     currentSearchParams: URLSearchParams,
-    newParamString: string
+    newParamString: string,
   ) {
     // Create a new URLSearchParams object from the current search params
     const updatedParams = new URLSearchParams(currentSearchParams)
@@ -136,21 +136,25 @@ items-center px-2 w-max"
 
     <div class="flex items-center gap-2">
       <Button
-        on:click={() => goto($page.url, { invalidateAll: true })}
+        onclick={() => goto($page.url, { invalidateAll: true })}
         size="square-lg"
         rounding="xl"
         title={$t('common.refresh')}
       >
-        <Icon src={ArrowPath} size="16" mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={ArrowPath} size="16" mini />
+        {/snippet}
       </Button>
       <Button
-        on:click={markAllAsRead}
+        onclick={markAllAsRead}
         loading={markingAsRead}
         disabled={markingAsRead}
         size="lg"
         class="h-10"
       >
-        <Icon src={Check} width={16} mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Check} width={16} mini />
+        {/snippet}
         {$t('routes.inbox.markAsRead')}
       </Button>
     </div>
@@ -179,7 +183,7 @@ items-center px-2 w-max"
           delay: index * 50,
         }}
       >
-        <InboxItem bind:item />
+        <InboxItem bind:item={data.data[index]} />
       </div>
     {/each}
   {/if}

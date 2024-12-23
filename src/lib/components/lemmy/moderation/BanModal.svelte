@@ -1,25 +1,35 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import type { Community, Person, PersonView } from 'lemmy-js-client'
   import { getClient } from '$lib/lemmy.js'
   import { toast } from 'mono-svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button, Checkbox, Modal, TextInput } from 'mono-svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { t } from '$lib/translations'
   import CommunityLink from '../community/CommunityLink.svelte'
 
-  export let open = false
-  let item: Person | undefined
-  export { item as user }
-  export let community: Community | undefined
-  export let banned: boolean
+  interface Props {
+    open?: boolean
+    user: Person | undefined
+    community: Community | undefined
+    banned: boolean
+  }
 
-  let reason = ''
-  let deleteData = false
-  let expires = ''
+  let {
+    open = $bindable(false),
+    user: item = $bindable(),
+    community,
+    banned,
+  }: Props = $props()
 
-  let loading = false
+  let reason = $state('')
+  let deleteData = $state(false)
+  let expires = $state('')
+
+  let loading = $state(false)
 
   // hack due to svelte's reactive declarations
   const resetReason = () => {
@@ -28,7 +38,9 @@
     expires = ''
   }
 
-  $: if (item) resetReason()
+  run(() => {
+    if (item) resetReason()
+  })
 
   async function submit() {
     if (!item || !$profile?.user || !$profile?.jwt) return
@@ -105,7 +117,7 @@
   title={banned ? $t('moderation.ban.unbanning') : $t('moderation.ban.banning')}
 >
   {#if item}
-    <form class="flex flex-col gap-4" on:submit|preventDefault={submit}>
+    <form class="flex flex-col gap-4" onsubmit={preventDefault(submit)}>
       <div class="flex items-center gap-1">
         <Avatar url={item.avatar} alt={item.name} width={24} />
         <span class="font-bold">{item.name}</span>
@@ -121,9 +133,9 @@
       {#if !banned}
         <Checkbox bind:checked={deleteData}>
           {$t('moderation.ban.deleteData')}
-          <svelte:fragment slot="description">
+          {#snippet description()}
             {$t('moderation.ban.warning')}
-          </svelte:fragment>
+          {/snippet}
         </Checkbox>
         <TextInput
           bind:value={expires}

@@ -10,16 +10,27 @@
   import { optimizeImageURL } from '../helpers'
   import PostLinkSources from './PostLinkSources.svelte'
   import { t } from '$lib/translations'
-  import type { View } from '$lib/settings'
+  import type { View } from '$lib/settings.svelte'
 
-  export let url: string
-  export let thumbnail_url: string | undefined = undefined
-  export let nsfw: boolean = false
-  export let embed_title: string | undefined = undefined
-  export let embed_description: string | undefined = undefined
-  export let view: View = 'cozy'
+  interface Props {
+    url: string
+    thumbnail_url?: string | undefined
+    nsfw?: boolean
+    embed_title?: string | undefined
+    embed_description?: string | undefined
+    view?: View
+  }
 
-  $: richURL = parseURL(url)
+  let {
+    url,
+    thumbnail_url = undefined,
+    nsfw = false,
+    embed_title = undefined,
+    embed_description = undefined,
+    view = 'cozy',
+  }: Props = $props()
+
+  let richURL = $derived(parseURL(url))
 </script>
 
 <!-- 
@@ -105,43 +116,39 @@
     rounded-full flex p-1 relative -top-7 min-[384px]:mx-3 mt-8 min-[384px]:mt-0 mx-auto -mb-7 w-max max-w-full overflow-auto"
   >
     <PostLinkSources {url}>
-      <Button
-        color="tertiary"
-        slot="target"
-        size="sm"
-        class="w-max text-slate-600 dark:text-zinc-400 block
-      text-xs flex-shrink-0"
-        rounding="pill"
-      >
-        <Icon
-          src={LinkIcon}
-          size="16"
-          micro
-          slot="prefix"
-          class="flex-shrink-0"
-        />
-        {$t('post.actions.link.actions')}
-      </Button>
+      {#snippet target()}
+        <Button
+          color="tertiary"
+          size="sm"
+          class="w-max text-slate-600 dark:text-zinc-400 block
+        text-xs flex-shrink-0"
+          rounding="pill"
+        >
+          <Icon src={LinkIcon} size="16" micro class="flex-shrink-0" />
+          {$t('post.actions.link.actions')}
+        </Button>
+      {/snippet}
     </PostLinkSources>
   </div>
 {:else}
   <div class="flex space-x-1">
     <PostLinkSources {url}>
-      <Button
-        color="ghost"
-        slot="target"
-        size="xs"
-        rounding="pill"
-        class="p-0.5 px-1 w-max mt-auto text-slate-600 dark:text-zinc-400 block
-        text-xs"
-      >
-        <div class="mr-0.5" style="width: 8px;">
-          <Icon src={LinkIcon} size="16" micro slot="prefix" />
-        </div>
-        <div class="mr-1" style="width: 8px;">
-          <Icon src={ChevronDown} size="16" micro slot="suffix" />
-        </div>
-      </Button>
+      {#snippet target()}
+        <Button
+          color="ghost"
+          size="xs"
+          rounding="pill"
+          class="p-0.5 px-1 w-max mt-auto text-slate-600 dark:text-zinc-400 block
+          text-xs"
+        >
+          <div class="mr-0.5" style="width: 8px;">
+            <Icon src={LinkIcon} size="16" micro />
+          </div>
+          <div class="mr-1" style="width: 8px;">
+            <Icon src={ChevronDown} size="16" micro />
+          </div>
+        </Button>
+      {/snippet}
     </PostLinkSources>
     <Button
       href={url}

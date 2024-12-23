@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import Post from '$lib/components/lemmy/post/Post.svelte'
   import {
     AdjustmentsHorizontal,
@@ -22,10 +24,10 @@
   import { isBlocked } from '$lib/lemmy/user.js'
   import { Menu, MenuButton, removeToast, toast } from 'mono-svelte'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { ban, isAdmin } from '$lib/components/lemmy/moderation/moderation.js'
   import ShieldIcon from '$lib/components/lemmy/moderation/ShieldIcon.svelte'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { Button, Modal, Select } from 'mono-svelte'
   import PrivateMessageModal from '$lib/components/lemmy/modal/PrivateMessageModal.svelte'
@@ -37,8 +39,12 @@
   import { publishedToDate } from '$lib/components/util/date.js'
   import { formatRelativeDate } from '$lib/components/util/RelativeDate.svelte'
 
-  export let data
-  export let inline: boolean = false
+  interface Props {
+    data: any
+    inline?: boolean
+  }
+
+  let { data = $bindable(), inline = false }: Props = $props()
 
   let blocking = false
 
@@ -78,16 +84,18 @@
     blocking = false
   }
 
-  let messaging = false
+  let messaging = $state(false)
 
-  let purgingUser = false
-  let purgeEnabled = false
-  $: if (purgingUser) {
-    purgeEnabled = false
-    setTimeout(() => {
-      purgeEnabled = true
-    }, 3000)
-  }
+  let purgingUser = $state(false)
+  let purgeEnabled = $state(false)
+  run(() => {
+    if (purgingUser) {
+      purgeEnabled = false
+      setTimeout(() => {
+        purgeEnabled = true
+      }, 3000)
+    }
+  })
 
   async function purgeUser() {
     purgingUser = false
@@ -118,7 +126,9 @@
 
 {#if purgingUser}
   <Modal bind:open={purgingUser}>
-    <svelte:fragment slot="title">Purging User</svelte:fragment>
+    {#snippet title()}
+      Purging User
+    {/snippet}
     <p>
       Purging user <span class="font-bold">
         {data.person_view.person.name}
@@ -128,13 +138,13 @@
       Are you sure you want to do this? (The button will enable in 3 seconds.)
     </p>
     <div class="flex flex-row gap-2">
-      <Button size="lg" on:click={() => (purgingUser = false)} class="flex-1">
+      <Button size="lg" onclick={() => (purgingUser = false)} class="flex-1">
         Cancel
       </Button>
       <Button
         size="lg"
         color="danger"
-        on:click={purgeUser}
+        onclick={purgeUser}
         disabled={!purgeEnabled}
         class="flex-1"
       >
@@ -166,30 +176,34 @@
             name: $t('stats.joined'),
             value: formatRelativeDate(
               publishedToDate(data.person_view.person.published),
-              { style: 'short' }
+              { style: 'short' },
             ).toString(),
             format: false,
           },
         ]}
       >
-        <span class="text-sm flex gap-0 items-center w-max" slot="nameDetail">
-          @
-          <UserLink
-            showInstance
-            user={data.person_view.person}
-            displayName={false}
-            class="font-normal"
-          />
-        </span>
+        {#snippet nameDetail()}
+          <span class="text-sm flex gap-0 items-center w-max">
+            @
+            <UserLink
+              showInstance
+              user={data.person_view.person}
+              displayName={false}
+              class="font-normal"
+            />
+          </span>
+        {/snippet}
         {#if (data.moderates ?? []).length > 0}
           <Expandable
             class="border rounded-xl bg-white/50 dark:bg-zinc-900/50 w-full p-3 px-4
       dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text-zinc-300 transition-colors"
           >
-            <span slot="title" class="flex items-center gap-1">
-              <ShieldIcon width={14} filled />
-              {$t('routes.profile.moderates')}
-            </span>
+            {#snippet title()}
+              <span class="flex items-center gap-1">
+                <ShieldIcon width={14} filled />
+                {$t('routes.profile.moderates')}
+              </span>
+            {/snippet}
             <ItemList
               items={data.moderates.map((m) => ({
                 id: m.community.id,
@@ -201,7 +215,7 @@
             />
           </Expandable>
         {/if}
-        <svelte:fragment slot="actions">
+        {#snippet actions()}
           {#if $profile?.user && $profile.jwt && data.person_view.person.id != $profile.user.local_user_view.person.id}
             <div class="flex items-center gap-2 w-full">
               <Button
@@ -210,7 +224,9 @@
                 href="/inbox/messages/{data.person_view.person.id}"
                 title="Message"
               >
-                <Icon slot="prefix" solid size="16" src={Envelope} />
+                {#snippet prefix()}
+                  <Icon solid size="16" src={Envelope} />
+                {/snippet}
               </Button>
               {#if data.person_view.person.matrix_user_id}
                 <Button
@@ -220,48 +236,57 @@
                     .matrix_user_id}"
                   title="Matrix User"
                 >
-                  <Icon slot="prefix" solid size="16" src={AtSymbol} />
+                  {#snippet prefix()}
+                    <Icon solid size="16" src={AtSymbol} />
+                  {/snippet}
                 </Button>
               {/if}
               {#if isAdmin($profile?.user)}
                 <Menu class="ml-auto" placement="bottom-end">
-                  <Button size="square-md" slot="target">
-                    <ShieldIcon width={16} filled />
-                  </Button>
+                  {#snippet target()}
+                    <Button size="square-md">
+                      <ShieldIcon width={16} filled />
+                    </Button>
+                  {/snippet}
                   <MenuButton
                     color="danger-subtle"
-                    on:click={() =>
+                    onclick={() =>
                       ban(
                         data.person_view.person.banned,
-                        data.person_view.person
+                        data.person_view.person,
                       )}
                   >
-                    <Icon
-                      slot="prefix"
-                      mini
-                      size="16"
-                      src={ShieldExclamation}
-                    />
+                    {#snippet prefix()}
+                      <Icon mini size="16" src={ShieldExclamation} />
+                    {/snippet}
                     {data.person_view.person.banned ? 'Unban' : 'Ban'}
                   </MenuButton>
                   <MenuButton
                     color="danger-subtle"
-                    on:click={() => (purgingUser = !purgingUser)}
+                    onclick={() => (purgingUser = !purgingUser)}
                   >
-                    <Icon slot="prefix" mini size="16" src={Fire} />
+                    {#snippet prefix()}
+                      <Icon mini size="16" src={Fire} />
+                    {/snippet}
                     Purge
                   </MenuButton>
                 </Menu>
               {/if}
               <Menu placement="bottom-end">
-                <Button size="square-md" slot="target">
-                  <Icon src={EllipsisHorizontal} slot="prefix" size="16" mini />
-                </Button>
+                {#snippet target()}
+                  <Button size="square-md">
+                    {#snippet prefix()}
+                      <Icon src={EllipsisHorizontal} size="16" mini />
+                    {/snippet}
+                  </Button>
+                {/snippet}
                 <MenuButton
                   color="danger-subtle"
-                  on:click={() => blockUser(data.person_view.person.id)}
+                  onclick={() => blockUser(data.person_view.person.id)}
                 >
-                  <Icon slot="prefix" mini size="16" src={NoSymbol} />
+                  {#snippet prefix()}
+                    <Icon mini size="16" src={NoSymbol} />
+                  {/snippet}
                   {isBlocked($profile.user, data.person_view.person.id)
                     ? 'Unblock'
                     : 'Block'}
@@ -269,7 +294,7 @@
               </Menu>
             </div>
           {/if}
-        </svelte:fragment>
+        {/snippet}
       </EntityHeader>
     </div>
   {/if}
@@ -280,10 +305,12 @@
         bind:value={data.type}
         on:change={() => searchParam($page.url, 'type', data.type, 'page')}
       >
-        <span slot="label" class="flex items-center gap-1">
-          <Icon src={AdjustmentsHorizontal} size="15" mini />
-          {$t('filter.type')}
-        </span>
+        {#snippet label()}
+          <span class="flex items-center gap-1">
+            <Icon src={AdjustmentsHorizontal} size="15" mini />
+            {$t('filter.type')}
+          </span>
+        {/snippet}
         <option value="all">{$t('content.all')}</option>
         <option value="posts">{$t('content.posts')}</option>
         <option value="comments">{$t('content.comments')}</option>
@@ -292,10 +319,12 @@
         bind:value={data.sort}
         on:change={() => searchParam($page.url, 'sort', data.sort, 'page')}
       >
-        <span slot="label" class="flex items-center gap-1">
-          <Icon src={ChartBar} size="14" mini />
-          {$t('filter.sort.label')}
-        </span>
+        {#snippet label()}
+          <span class="flex items-center gap-1">
+            <Icon src={ChartBar} size="14" mini />
+            {$t('filter.sort.label')}
+          </span>
+        {/snippet}
         <option value="New">{$t('filter.sort.new')}</option>
         <option value="TopAll">{$t('filter.sort.top.label')}</option>
         <option value="Old">{$t('filter.sort.old')}</option>

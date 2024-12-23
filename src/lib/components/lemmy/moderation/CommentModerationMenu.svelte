@@ -9,24 +9,30 @@
     Trash,
   } from 'svelte-hero-icons'
   import { isCommentView } from '$lib/lemmy/item.js'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import ShieldIcon from '$lib/components/lemmy/moderation/ShieldIcon.svelte'
   import { Button, Menu, MenuButton, MenuDivider } from 'mono-svelte'
   import { t } from '$lib/translations'
 
-  export let item: PostView | CommentView
+  interface Props {
+    item: PostView | CommentView
+    [key: string]: any
+  }
+
+  let { item = $bindable(), ...rest }: Props = $props()
 </script>
 
 <Menu placement="bottom" class="top-0 h-[26px] w-[26px] ">
-  <Button
-    class="w-[26px] h-[26px] hover:!text-green-500 dark:text-zinc-400 text-slate-600"
-    size="square-md"
-    slot="target"
-    color="tertiary"
-    {...$$restProps}
-  >
-    <ShieldIcon filled width={14} />
-  </Button>
+  {#snippet target()}
+    <Button
+      class="w-[26px] h-[26px] hover:!text-green-500 dark:text-zinc-400 text-slate-600"
+      size="square-md"
+      color="tertiary"
+      {...rest}
+    >
+      <ShieldIcon filled width={14} />
+    </Button>
+  {/snippet}
   {#if ($profile?.user && amMod($profile.user, item.community)) || ($profile?.user && isAdmin($profile.user))}
     <MenuDivider>
       {#if !item.community.local && !amMod($profile.user, item.community)}
@@ -35,8 +41,10 @@
         {$t('moderation.label')}
       {/if}
     </MenuDivider>
-    <MenuButton color="danger-subtle" on:click={() => remove(item)}>
-      <Icon src={Trash} size="16" mini slot="prefix" />
+    <MenuButton color="danger-subtle" onclick={() => remove(item)}>
+      {#snippet prefix()}
+        <Icon src={Trash} size="16" mini />
+      {/snippet}
       {#if isCommentView(item)}
         {item.comment.removed
           ? $t('moderation.restore')
@@ -49,10 +57,12 @@
       <!--Comment made by someone else-->
       <MenuButton
         color="danger-subtle"
-        on:click={() =>
+        onclick={() =>
           ban(item.creator_banned_from_community, item.creator, item.community)}
       >
-        <Icon src={ShieldExclamation} size="16" mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={ShieldExclamation} size="16" mini />
+        {/snippet}
         {item.creator_banned_from_community
           ? $t('moderation.ban.unbanFromCommunity')
           : $t('moderation.ban.banFromCommunity')}
@@ -61,18 +71,20 @@
       <!--Comment made by self-->
       <MenuButton
         color="success-subtle"
-        on:click={async () => {
+        onclick={async () => {
           if (!$profile.jwt) return
           item.comment = (
             await feature(
               !item.comment.distinguished,
               item.comment,
-              $profile.jwt
+              $profile.jwt,
             )
           ).comment_view.comment
         }}
       >
-        <Icon src={Megaphone} size="16" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Megaphone} size="16" micro />
+        {/snippet}
         {item.comment.distinguished
           ? $t('moderation.unfeature')
           : $t('moderation.feature')}
@@ -82,8 +94,10 @@
 
   {#if $profile?.user && isAdmin($profile.user)}
     <MenuDivider>{$t('admin.label')}</MenuDivider>
-    <MenuButton color="danger-subtle" on:click={() => remove(item, true)}>
-      <Icon src={Fire} size="16" mini slot="prefix" />
+    <MenuButton color="danger-subtle" onclick={() => remove(item, true)}>
+      {#snippet prefix()}
+        <Icon src={Fire} size="16" mini />
+      {/snippet}
       {$t('admin.purge')}
     </MenuButton>
   {/if}

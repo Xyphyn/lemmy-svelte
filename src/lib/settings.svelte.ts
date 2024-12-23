@@ -1,4 +1,4 @@
-import type { CommentSortType, SortType } from 'lemmy-js-client'
+import type { CommentSortType, ListingType, SortType } from 'lemmy-js-client'
 import { writable } from 'svelte/store'
 import { env } from '$env/dynamic/public'
 import { locale } from './translations'
@@ -40,7 +40,7 @@ interface Settings {
 
   defaultSort: {
     sort: SortType
-    feed: 'All' | 'Subscribed' | 'Local'
+    feed: ListingType
     comments: CommentSortType
   }
   hidePosts: {
@@ -191,43 +191,64 @@ export const defaultSettings: Settings = {
   logoColorMonth: null,
 }
 
-export const userSettings = writable(defaultSettings)
 
-const migrate = (settings: any): Settings => {
-  if (typeof settings?.moderation?.removalReasonPreset == 'string') {
-    settings.moderation.presets = [
-      {
-        title: 'Preset 1',
-        content: settings.moderation.removalReasonPreset,
-      },
-    ]
-    settings.moderation.removalReasonPreset = undefined
+
+function createSettingsState(initial: Settings): Settings {
+  let settings = $state(initial)
+  if (browser) {
+    try {
+      const localSettings = JSON.parse(localStorage.getItem('settings') ?? '{}')
+      const merged = mergeDeep(initial, localSettings)
+
+      settings = merged
+    } catch (e) {
+    }
+
   }
-
   return settings
 }
 
-if (typeof window != 'undefined') {
-  let oldUserSettings = JSON.parse(
-    localStorage.getItem('settings') ?? JSON.stringify(defaultSettings)
-  )
+export let settings = createSettingsState(defaultSettings)
 
-  oldUserSettings = migrate(oldUserSettings)
+$effect.root(() => {
+  $effect(() => {
+   localStorage.setItem('settings', JSON.stringify(settings))
 
-  userSettings.set({
-    ...defaultSettings,
-    ...oldUserSettings,
-    settingsVer: defaultSettings.settingsVer,
+    if (settings.language) {
+      locale.set(settings.language)
+    } else {
+      if (browser) locale.set(navigator?.language)
+    }
   })
-}
 
-userSettings.subscribe((settings) => {
-  if (typeof window != 'undefined') {
-    localStorage.setItem('settings', JSON.stringify(settings))
-  }
-  if (settings.language) {
-    locale.set(settings.language)
-  } else {
-    if (browser) locale.set(navigator?.language)
+  return () => {
+    
   }
 })
+
+function isObject(item: any) {
+  return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+/**
+ * Deep merge two objects.
+ * @param target
+ * @param ...sources
+ */
+function mergeDeep(target: any, ...sources: any[]) {
+  if (!sources.length) return target;
+  const source = sources.shift();
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} });
+        mergeDeep(target[key], source[key]);
+      } else {
+        Object.assign(target, { [key]: source[key] });
+      }
+    }
+  }
+
+  return mergeDeep(target, ...sources);
+}

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { goto } from '$app/navigation'
-  import { setUser } from '$lib/auth.js'
+  import { setUser } from '$lib/auth.svelte.js'
   import { Note, toast } from 'mono-svelte'
   import { DEFAULT_INSTANCE_URL, LINKED_INSTANCE_URL } from '$lib/instance.js'
   import {
@@ -16,7 +18,7 @@
     QuestionMarkCircle,
     UserCircle,
   } from 'svelte-hero-icons'
-  import { DOMAIN_REGEX_FORMS } from '$lib/util.js'
+  import { DOMAIN_REGEX_FORMS } from '$lib/util.svelte.js'
   import { MINIMUM_VERSION } from '$lib/version.js'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
@@ -27,16 +29,21 @@
   } from '$lib/components/error/ErrorContainer.svelte'
   import { page } from '$app/stores'
 
-  export let ref: string = '/'
+  interface Props {
+    ref?: string
+    children?: import('svelte').Snippet
+  }
 
-  let data = {
+  let { ref = '/', children }: Props = $props()
+
+  let data = $state({
     instance: DEFAULT_INSTANCE_URL,
     username: '',
     password: '',
     totp: '',
     loading: false,
     attempts: 0,
-  }
+  })
 
   async function logIn() {
     data.loading = true
@@ -73,7 +80,7 @@
                 'incorrect_login' +
                   (data.attempts == 0 || data.attempts >= 12
                     ? ''
-                    : `_${data.attempts + 1}`)
+                    : `_${data.attempts + 1}`),
               )
             : errorMessage(error),
         scope: $page.route.id!,
@@ -89,9 +96,9 @@
 </svelte:head>
 
 <div class="max-w-xl w-full mx-auto h-max my-auto">
-  <form on:submit|preventDefault={logIn} class="flex flex-col gap-5">
+  <form onsubmit={preventDefault(logIn)} class="flex flex-col gap-5">
     <div class="flex flex-col">
-      <slot />
+      {@render children?.()}
       <Header>{$t('account.login')}</Header>
       {#if $site && mayBeIncompatible(MINIMUM_VERSION, $site.version.replace('v', ''))}
         <Note>

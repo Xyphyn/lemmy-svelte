@@ -3,17 +3,29 @@
   import PostMeta from '$lib/components/lemmy/post/PostMeta.svelte'
   import { publishedToDate } from '$lib/components/util/date.js'
   import { getInstance } from '$lib/lemmy.js'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import { t } from '$lib/translations'
   import type { CommentView } from 'lemmy-js-client'
   import { Button, Material } from 'mono-svelte'
   import { ArrowUturnUp, Icon } from 'svelte-hero-icons'
 
-  export let comment: CommentView
-  export let view = $userSettings.view
-  export let community = false
+  interface Props {
+    comment: CommentView
+    view?: any
+    community?: boolean
+    meta?: boolean
+    class?: string
+    [key: string]: any
+  }
 
-  export let meta: boolean = true
+  let {
+    comment,
+    view = settings.view,
+    community = false,
+    meta = true,
+    class: clazz = '',
+    ...rest
+  }: Props = $props()
 </script>
 
 <Material
@@ -23,7 +35,7 @@
     ? 'py-5'
     : view == 'compact'
       ? 'py-4'
-      : 'py-5'} {$$props.class}"
+      : 'py-5'} {clazz}"
   color="distinct"
   padding="none"
 >
@@ -66,7 +78,7 @@
       node={{ children: [], comment_view: comment, depth: 1, ui: {} }}
       replying={false}
       {meta}
-      {...$$restProps}
+      {...rest}
     />
   </div>
 </Material>

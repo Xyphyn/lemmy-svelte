@@ -1,6 +1,6 @@
 import { goto } from '$app/navigation'
 import { toast } from 'mono-svelte'
-import { userSettings } from '$lib/settings.js'
+import { settings } from '$lib/settings.svelte'
 import { get } from 'svelte/store'
 import type { SubscribedType } from 'lemmy-js-client'
 import { page } from '$app/stores'
@@ -53,7 +53,7 @@ export const placeholders = {
     'hello user i am a sentient placeholder. please dont type anything or i disappear forever. thanks',
   ],
   get: (type: 'url' | 'post' | 'comment') => {
-    return get(userSettings)?.randomPlaceholders
+    return settings.randomPlaceholders
       ? placeholders[type][
           Math.floor(Math.random() * placeholders[type].length)
         ]

@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export type ButtonColor = keyof typeof buttonColor
   export type ButtonAlignment = keyof typeof buttonAlignment
   export type ButtonShadow = keyof typeof buttonShadow
@@ -112,37 +112,55 @@
     },
   }
 
-  export let loading = false
-  export let submit = false
-
-  export let color: ButtonColor = 'secondary'
-  export let size: ButtonSize = 'md'
-  export let rounding: ButtonRoundness = size == 'lg' ? 'xl' : 'lg'
-  export let roundingSide: ButtonRoundingSide = 'all'
-  export let alignment: ButtonAlignment = 'center'
-  export let shadow: ButtonShadow = 'none'
-  export let column: boolean = false
-  export let animations = {
-    scale: false,
-    large: false,
+  interface Props {
+    loading?: boolean
+    submit?: boolean
+    color?: ButtonColor
+    size?: ButtonSize
+    rounding?: ButtonRoundness
+    roundingSide?: ButtonRoundingSide
+    alignment?: ButtonAlignment
+    shadow?: ButtonShadow
+    column?: boolean
+    animations?: any
+    loaderWidth?: number | undefined
+    href?: string | undefined
+    class?: string
+    prefix?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+    suffix?: import('svelte').Snippet
+    [key: string]: any
   }
 
-  export let loaderWidth: number | undefined = undefined
-
-  export let href: string | undefined = undefined
+  let {
+    loading = false,
+    submit = false,
+    color = 'secondary',
+    size = 'md',
+    rounding = size == 'lg' ? 'xl' : 'lg',
+    roundingSide = 'all',
+    alignment = 'center',
+    shadow = 'none',
+    column = false,
+    animations = {
+      scale: false,
+      large: false,
+    },
+    loaderWidth = undefined,
+    href = undefined,
+    class: clazz = '',
+    prefix,
+    children,
+    suffix,
+    ...rest
+  }: Props = $props()
 </script>
 
 <svelte:element
   this={href ? 'a' : 'button'}
   role={href ? 'link' : 'button'}
   {href}
-  {...$$restProps}
-  on:click
-  on:contextmenu
-  on:drag
-  on:drop
-  on:dragstart
-  on:dragend
+  {...rest}
   class="
       {loading ? buttonColor.secondary : buttonColor[color]}
       {buttonSize[size]}
@@ -155,7 +173,7 @@
     : alignment == 'left'
       ? 'origin-left'
       : 'origin-right'}
-      {$$props.class}"
+      {clazz}"
   type={submit ? 'submit' : 'button'}
 >
   <div
@@ -167,11 +185,11 @@
   >
     {#if loading}
       <Spinner width={loaderWidth ?? 16} />
-    {:else if $$slots.prefix}
-      <slot name="prefix" />
+    {:else if prefix}
+      {@render prefix?.()}
     {/if}
-    <slot />
-    <slot name="suffix" />
+    {@render children?.()}
+    {@render suffix?.()}
   </div>
 </svelte:element>
 

@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   export const parseURL = (href: string) => {
     try {
       return new URL(href)
@@ -9,26 +9,42 @@
 </script>
 
 <script lang="ts">
-  export let href: string
-  export let highlight: boolean = false
-  export let nowrap: boolean = false
+  interface Props {
+    href: string
+    highlight?: boolean
+    nowrap?: boolean
+    children?: import('svelte').Snippet
+    class?: string
+    icon?: import('svelte').Snippet
+    [key: string]: any
+  }
 
-  $: richURL = $$slots.default ? undefined : parseURL(href)
+  let {
+    href,
+    highlight = false,
+    nowrap = false,
+    children,
+    class: clazz = '',
+    icon,
+    ...rest
+  }: Props = $props()
+
+  let richURL = $derived(children ? undefined : parseURL(href))
 </script>
 
 <a
-  {...$$restProps}
+  {...rest}
   {href}
   class="{highlight
     ? 'text-blue-500'
-    : ''} hover:underline max-w-full inline-flex items-center gap-1 {$$props.class}"
+    : ''} hover:underline max-w-full inline-flex items-center gap-1 {clazz}"
 >
-  <slot name="icon" />
-  <slot>
+  {@render icon?.()}
+  {#if children}{@render children()}{:else}
     <span
       class="flex relative gap-0 {nowrap
         ? 'w-full whitespace-nowrap overflow-hidden text-ellipsis text-xs'
-        : ''} {$$props.class}"
+        : ''} {clazz}"
     >
       {#if richURL}
         <span class="text-blue-300 dark:text-blue-800">
@@ -49,5 +65,5 @@
         {href}
       {/if}
     </span>
-  </slot>
+  {/if}
 </a>

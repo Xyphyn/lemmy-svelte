@@ -7,8 +7,12 @@
   import { createEventDispatcher } from 'svelte'
   import { EllipsisVertical, Flag, Icon, Trash } from 'svelte-hero-icons'
 
-  export let message: PrivateMessageView
-  export let primary: boolean = false
+  interface Props {
+    message: PrivateMessageView
+    primary?: boolean
+  }
+
+  let { message, primary = false }: Props = $props()
 
   const dispatch = createEventDispatcher<{ delete: boolean; report: boolean }>()
 </script>
@@ -28,31 +32,36 @@
     <Markdown source={message.private_message.content} inline />
   </div>
   <Menu>
-    <Button
-      color="tertiary"
-      class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all flex-shrink-0"
-      size="square-md"
-      rounding="pill"
-      slot="target"
-      title={$t('post.actions.more.actions')}
-    >
-      <Icon src={EllipsisVertical} size="16" micro />
-    </Button>
+    {#snippet target()}
+      <Button
+        color="tertiary"
+        class="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all flex-shrink-0"
+        size="square-md"
+        rounding="pill"
+        title={$t('post.actions.more.actions')}
+      >
+        <Icon src={EllipsisVertical} size="16" micro />
+      </Button>
+    {/snippet}
     <MenuDivider>{$t('post.actions.more.actions')}</MenuDivider>
     {#if primary}
       <MenuButton
         color="danger-subtle"
-        on:click={() => dispatch('delete', true)}
+        onclick={() => dispatch('delete', true)}
       >
-        <Icon src={Trash} size="16" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Trash} size="16" micro />
+        {/snippet}
         {$t('post.actions.more.delete')}
       </MenuButton>
     {:else}
       <MenuButton
         color="danger-subtle"
-        on:click={() => dispatch('report', true)}
+        onclick={() => dispatch('report', true)}
       >
-        <Icon src={Flag} size="16" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Flag} size="16" micro />
+        {/snippet}
         {$t('moderation.report')}
       </MenuButton>
     {/if}

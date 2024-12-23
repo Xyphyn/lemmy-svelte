@@ -106,7 +106,7 @@ export const removalTemplate = (
     communityLink?: string
     username?: string
     reason?: string
-  }
+  },
 ) => {
   if (content.postTitle) input = input.replaceAll('{{post}}', content.postTitle)
   if (content.communityLink)

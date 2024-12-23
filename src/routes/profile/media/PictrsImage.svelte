@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte'
   import { publishedToDate } from '$lib/components/util/date'
   import RelativeDate from '$lib/components/util/RelativeDate.svelte'
   import { instance } from '$lib/instance'
   import { client } from '$lib/lemmy'
   import { t } from '$lib/translations'
-  import { instanceToURL } from '$lib/util'
+  import { instanceToURL } from '$lib/util.svelte'
   import type { LocalImage } from 'lemmy-js-client'
   import { Button, Material, toast } from 'mono-svelte'
   import { createEventDispatcher } from 'svelte'
@@ -13,7 +13,7 @@
 
   const dispatch = createEventDispatcher<{ delete: boolean }>()
 
-  let loading = false
+  let loading = $state(false)
 
   async function deleteImage(image: LocalImage) {
     if (!$profile?.jwt) return
@@ -32,7 +32,11 @@
     loading = false
   }
 
-  export let image: LocalImage
+  interface Props {
+    image: LocalImage
+  }
+
+  let { image }: Props = $props()
 </script>
 
 <div class="flex flex-col gap-1">
@@ -54,16 +58,20 @@
       size="square-md"
       class="ml-auto"
     >
-      <Icon src={ArrowDownTray} size="16" mini slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={ArrowDownTray} size="16" mini />
+      {/snippet}
     </Button>
     <Button
       title={$t('post.actions.more.delete')}
-      on:click={() => deleteImage(image)}
+      onclick={() => deleteImage(image)}
       size="square-md"
       {loading}
       disabled={loading}
     >
-      <Icon src={Trash} size="16" mini slot="prefix" color="text-red-500" />
+      {#snippet prefix()}
+        <Icon src={Trash} size="16" mini color="text-red-500" />
+      {/snippet}
     </Button>
   </div>
 </div>

@@ -2,8 +2,8 @@ import { type GetSiteResponse, LemmyHttp } from 'lemmy-js-client'
 import { get, writable } from 'svelte/store'
 import { error } from '@sveltejs/kit'
 import { instance } from '$lib/instance.js'
-import { instanceToURL } from '$lib/util.js'
-import { profile } from '$lib/auth.js'
+import { instanceToURL } from '$lib/util.svelte'
+import { profile } from '$lib/auth.svelte'
 import { toast } from 'mono-svelte'
 
 export const site = writable<GetSiteResponse | undefined>(undefined)

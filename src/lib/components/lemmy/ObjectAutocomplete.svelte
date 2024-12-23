@@ -7,15 +7,28 @@
   import { Icon, XCircle, ServerStack } from 'svelte-hero-icons'
   import { fly } from 'svelte/transition'
 
-  export let type: 'community' | 'instance' = 'community'
-  export let q: string = ''
+  interface Props {
+    type?: 'community' | 'instance'
+    q?: string
+    instance?: string | undefined
+    listing_type?: ListingType
+    showWhenEmpty?: boolean
+    [key: string]: any
+  }
 
-  export let instance: string | undefined = undefined
-  export let listing_type: ListingType = 'Subscribed'
-  export let showWhenEmpty: boolean = false
+  let {
+    type = 'community',
+    q = $bindable(''),
+    instance = undefined,
+    listing_type = 'Subscribed',
+    showWhenEmpty = false,
+    ...rest
+  }: Props = $props()
 
   const dispatcher = createEventDispatcher<{ select: Community | undefined }>()
-  $: instances = type == 'instance' && getClient().getFederatedInstances()
+  let instances = $derived(
+    type == 'instance' && getClient().getFederatedInstances(),
+  )
 </script>
 
 {#if type == 'community'}
@@ -35,33 +48,35 @@
     on:select
     bind:query={q}
     {showWhenEmpty}
-    {...$$restProps}
-    let:item
-    let:select
+    {...rest}
   >
-    <div class="w-full h-full" slot="noresults">
-      {#if q == '' && showWhenEmpty}
-        <MenuButton on:click={() => dispatcher('select', undefined)}>
-          <Icon src={XCircle} size="16" mini />
+    {#snippet noresults()}
+      <div class="w-full h-full">
+        {#if q == '' && showWhenEmpty}
+          <MenuButton onclick={() => dispatcher('select', undefined)}>
+            <Icon src={XCircle} size="16" mini />
+            <div class="flex flex-col text-left">
+              <span>None</span>
+            </div>
+          </MenuButton>
+        {:else}
+          <span class="mx-auto my-auto">No results.</span>
+        {/if}
+      </div>
+    {/snippet}
+    {#snippet children({ item, select })}
+      <div in:fly|global={{ y: -4, opacity: 0 }}>
+        <MenuButton onclick={() => select(item)}>
+          <Avatar url={item.icon} alt={item.title} width={24} />
           <div class="flex flex-col text-left">
-            <span>None</span>
+            <span>{item.title}</span>
+            <span class="text-xs opacity-80">
+              {new URL(item.actor_id).hostname}
+            </span>
           </div>
         </MenuButton>
-      {:else}
-        <span class="mx-auto my-auto">No results.</span>
-      {/if}
-    </div>
-    <div in:fly|global={{ y: -4, opacity: 0 }}>
-      <MenuButton on:click={() => select(item)}>
-        <Avatar url={item.icon} alt={item.title} width={24} />
-        <div class="flex flex-col text-left">
-          <span>{item.title}</span>
-          <span class="text-xs opacity-80">
-            {new URL(item.actor_id).hostname}
-          </span>
-        </div>
-      </MenuButton>
-    </div>
+      </div>
+    {/snippet}
   </Search>
 {:else if type == 'instance'}
   <Search
@@ -70,7 +85,7 @@
 
       return q
         ? (results.federated_instances?.linked || []).filter(
-            (i) => i.software === 'lemmy' && i.domain.includes(q)
+            (i) => i.software === 'lemmy' && i.domain.includes(q),
           )
         : []
     }}
@@ -78,28 +93,30 @@
     on:select
     bind:query={q}
     {showWhenEmpty}
-    {...$$restProps}
-    let:item
-    let:select
+    {...rest}
   >
-    <div class="w-full h-full" slot="noresults">
-      {#if q == '' && showWhenEmpty}
-        <MenuButton on:click={() => dispatcher('select', undefined)}>
+    {#snippet noresults()}
+      <div class="w-full h-full">
+        {#if q == '' && showWhenEmpty}
+          <MenuButton onclick={() => dispatcher('select', undefined)}>
+            <div class="flex flex-col text-left">
+              <span>None (Start typing to search)</span>
+            </div>
+          </MenuButton>
+        {:else}
+          <span class="mx-auto my-auto">No results.</span>
+        {/if}
+      </div>
+    {/snippet}
+    {#snippet children({ item, select })}
+      <div in:fly|global={{ y: -4, opacity: 0 }}>
+        <MenuButton onclick={() => select(item)}>
+          <Icon src={ServerStack} size="16" mini />
           <div class="flex flex-col text-left">
-            <span>None (Start typing to search)</span>
+            <span>{item.domain}</span>
           </div>
         </MenuButton>
-      {:else}
-        <span class="mx-auto my-auto">No results.</span>
-      {/if}
-    </div>
-    <div in:fly|global={{ y: -4, opacity: 0 }}>
-      <MenuButton on:click={() => select(item)}>
-        <Icon src={ServerStack} size="16" mini />
-        <div class="flex flex-col text-left">
-          <span>{item.domain}</span>
-        </div>
-      </MenuButton>
-    </div>
+      </div>
+    {/snippet}
   </Search>
 {/if}

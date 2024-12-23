@@ -4,17 +4,27 @@
   import { backOut, expoOut } from 'svelte/easing'
   import { slide } from 'svelte/transition'
 
-  export let title: string
-  export let id: string
 
-  export let open = true
+  interface Props {
+    title: string;
+    id: string;
+    open?: boolean;
+    children?: import('svelte').Snippet;
+  }
+
+  let {
+    title,
+    id,
+    open = $bindable(true),
+    children
+  }: Props = $props();
 </script>
 
 <div class="flex flex-col max-w-full w-full">
   <button
     class="text-left hover:text-primary-900 dark:hover:text-primary-100
     flex items-center justify-between z-0 relative group transition-colors"
-    on:click={() => (open = !open)}
+    onclick={() => (open = !open)}
   >
     <h2 class="text-xl font-semibold text-inherit" {id}>
       <span>{title}</span>
@@ -37,7 +47,7 @@
       transition:slide={{ axis: 'y', duration: 500, easing: expoOut }}
       class="w-full flex flex-col divide-y divide-slate-200 dark:divide-zinc-800 *:py-3"
     >
-      <slot />
+      {@render children?.()}
     </div>
   {/if}
 </div>

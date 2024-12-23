@@ -1,15 +1,29 @@
 <script lang="ts">
   import { Icon, type IconSource } from 'svelte-hero-icons'
 
-  export let icon: IconSource | undefined = undefined
 
-  export let title: string
-  export let description: string | undefined = undefined
-  export let center: boolean = false
+  interface Props {
+    icon?: IconSource | undefined;
+    title: string;
+    description?: string | undefined;
+    center?: boolean;
+    class?: string;
+    children?: import('svelte').Snippet;
+  }
+
+  let {
+    icon = undefined,
+    title,
+    description = undefined,
+    center = false,
+    class: clazz = '',
+    children
+  }: Props = $props();
+  
 </script>
 
 <div
-  class="text-slate-700 dark:text-zinc-300 flex flex-col w-max mx-auto items-center gap-4 {$$props.class}"
+  class="text-slate-700 dark:text-zinc-300 flex flex-col w-max mx-auto items-center gap-4 {clazz}"
 >
   <div class="flex flex-row gap-4 items-center max-w-sm">
     {#if icon}
@@ -19,7 +33,7 @@
         <Icon src={icon} size="28" />
       </div>
     {/if}
-    <div class={$$props.class}>
+    <div class={clazz}>
       <h1 class="text-slate-900 dark:text-zinc-100 text-lg font-medium">
         {title}
       </h1>
@@ -30,5 +44,5 @@
       {/if}
     </div>
   </div>
-  <slot />
+  {@render children?.()}
 </div>

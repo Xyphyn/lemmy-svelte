@@ -13,17 +13,22 @@
   } from 'svelte-hero-icons'
   import { isCommentView, isPostView } from '$lib/lemmy/item.js'
   import { Menu, MenuButton, MenuDivider, toast } from 'mono-svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button } from 'mono-svelte'
   import { t } from '$lib/translations'
   import ShieldIcon from './ShieldIcon.svelte'
 
-  export let item: PostView | CommentView
+  interface Props {
+    item: PostView | CommentView
+    [key: string]: any
+  }
 
-  let locking = false
-  let pinning = false
+  let { item = $bindable(), ...rest }: Props = $props()
 
-  $: acting = locking || pinning
+  let locking = $state(false)
+  let pinning = $state(false)
+
+  let acting = $derived(locking || pinning)
 
   async function lock(lock: boolean) {
     if (!$profile?.jwt || !isPostView(item)) return
@@ -71,16 +76,17 @@
 </script>
 
 <Menu placement="bottom-end">
-  <Button
-    class="hover:!text-green-500"
-    slot="target"
-    size="square-md"
-    color="ghost"
-    loading={acting}
-    {...$$restProps}
-  >
-    <ShieldIcon filled width={16} />
-  </Button>
+  {#snippet target()}
+    <Button
+      class="hover:!text-green-500"
+      size="square-md"
+      color="ghost"
+      loading={acting}
+      {...rest}
+    >
+      <ShieldIcon filled width={16} />
+    </Button>
+  {/snippet}
   {#if ($profile?.user && amMod($profile.user, item.community)) || ($profile?.user && isAdmin($profile.user))}
     <MenuDivider>
       {#if !item.community.local && !amMod($profile.user, item.community)}
@@ -91,22 +97,19 @@
     </MenuDivider>
     <MenuButton
       color="warning-subtle"
-      on:click={() => lock(!item.post.locked)}
+      onclick={() => lock(!item.post.locked)}
       loading={locking}
       disabled={locking}
     >
-      <Icon
-        src={item.post.locked ? LockOpen : LockClosed}
-        size="16"
-        mini
-        slot="prefix"
-      />
+      {#snippet prefix()}
+        <Icon src={item.post.locked ? LockOpen : LockClosed} size="16" mini />
+      {/snippet}
       {item.post.locked ? $t('moderation.unlock') : $t('moderation.lock')}
     </MenuButton>
 
     <MenuButton
       color="success-subtle"
-      on:click={() =>
+      onclick={() =>
         pin(isPostView(item) ? !item.post.featured_community : false)}
       loading={pinning}
       disabled={pinning}
@@ -125,7 +128,7 @@
         {/if}
       </div>
     </MenuButton>
-    <MenuButton color="danger-subtle" on:click={() => remove(item)}>
+    <MenuButton color="danger-subtle" onclick={() => remove(item)}>
       <Icon src={Trash} size="16" mini />
       {#if isCommentView(item)}
         {item.comment.removed
@@ -138,7 +141,7 @@
     {#if $profile?.user && $profile.user.local_user_view.person.id != item.creator.id}
       <MenuButton
         color="danger-subtle"
-        on:click={() =>
+        onclick={() =>
           ban(item.creator_banned_from_community, item.creator, item.community)}
       >
         <Icon src={ShieldExclamation} size="16" mini />
@@ -152,7 +155,7 @@
     <MenuDivider>{$t('admin.label')}</MenuDivider>
     <MenuButton
       color="success-subtle"
-      on:click={() =>
+      onclick={() =>
         pin(isPostView(item) ? !item.post.featured_local : false, true)}
     >
       <Icon src={Megaphone} size="16" mini />
@@ -167,7 +170,7 @@
         <span class="text-xs opacity-80">{$t('admin.instance')}</span>
       </div>
     </MenuButton>
-    <MenuButton color="danger-subtle" on:click={() => remove(item, true)}>
+    <MenuButton color="danger-subtle" onclick={() => remove(item, true)}>
       <Icon src={Fire} size="16" mini />
       {$t('admin.purge')}
     </MenuButton>

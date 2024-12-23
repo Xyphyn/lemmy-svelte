@@ -7,14 +7,21 @@
 
   type T = $$Generic
 
-  export let items: T[]
-  export let id: (item: T) => string | number | symbol
+  interface Props {
+    items: T[]
+    id: (item: T) => string | number | symbol
+    identifier?: import('svelte').Snippet<[any]>
+    children?: import('svelte').Snippet<[any]>
+  }
 
-  let filters: Set<string | number | symbol> = new Set()
+  let { items, id, identifier, children }: Props = $props()
 
-  $: filteredItems =
-    filters.size > 0 ? items.filter((i) => filters.has(id(i))) : items
-  $: uniqueIds = new Set(items.map(id))
+  let filters: Set<string | number | symbol> = $state(new Set())
+
+  let filteredItems = $derived(
+    filters.size > 0 ? items.filter((i) => filters.has(id(i))) : items,
+  )
+  let uniqueIds = $derived(new Set(items.map(id)))
 </script>
 
 <div class="flex flex-row overflow-auto space-x-2">
@@ -28,7 +35,7 @@
         in:fly={{ duration: 300, easing: expoOut, y: 6, delay: 100 }}
       >
         <Button
-          on:click={() => {
+          onclick={() => {
             filters.clear()
             filters = filters
           }}
@@ -42,25 +49,25 @@
       </div>
     </div>
   {/if}
-  {#each uniqueIds as identifier}
+  {#each uniqueIds as id}
     <Button
-      on:click={() => {
-        if (filters.has(identifier)) filters.delete(identifier)
-        else filters.add(identifier)
+      onclick={() => {
+        if (filters.has(id)) filters.delete(id)
+        else filters.add(id)
         filters = filters
       }}
-      color={filters.has(identifier) ? 'primary' : 'ghost'}
+      color={filters.has(id) ? 'primary' : 'ghost'}
       class="text-xs px-2.5"
       rounding="pill"
       size="sm"
     >
-      <slot name="identifier" string={identifier}>
+      {#if identifier}{@render identifier({ string: id })}{:else}
         <TextProps wrap="no-wrap">
-          {identifier}
+          {id}
         </TextProps>
-      </slot>
+      {/if}
     </Button>
   {/each}
 </div>
 
-<slot items={filteredItems} />
+{@render children?.({ items: filteredItems })}

@@ -1,6 +1,6 @@
 <script lang="ts">
   import UserPage from '../../u/[name]/+page.svelte'
-  export let data
+  let { data } = $props();
 </script>
 
 {#if data.user && data.sort && data.type && data.page}

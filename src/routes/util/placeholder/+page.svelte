@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { placeholders } from '$lib/util.js'
+  import { placeholders } from '$lib/util.svelte.js'
   import { Button } from 'mono-svelte'
 
-  let post = placeholders.get('post')
-  let comment = placeholders.get('comment')
-  let url = placeholders.get('url')
+  let post = $state(placeholders.get('post'))
+  let comment = $state(placeholders.get('comment'))
+  let url = $state(placeholders.get('url'))
 </script>
 
 <h1 class="font-bold text-2xl">Placeholders</h1>
@@ -17,7 +17,7 @@
 <p>
   {post}
 </p>
-<Button on:click={() => (post = placeholders.get('post'))} class="w-max">
+<Button onclick={() => (post = placeholders.get('post'))} class="w-max">
   Generate
 </Button>
 
@@ -25,7 +25,7 @@
 <p>
   {comment}
 </p>
-<Button on:click={() => (comment = placeholders.get('comment'))} class="w-max">
+<Button onclick={() => (comment = placeholders.get('comment'))} class="w-max">
   Generate
 </Button>
 
@@ -33,6 +33,6 @@
 <p>
   {url}
 </p>
-<Button on:click={() => (url = placeholders.get('url'))} class="w-max">
+<Button onclick={() => (url = placeholders.get('url'))} class="w-max">
   Generate
 </Button>

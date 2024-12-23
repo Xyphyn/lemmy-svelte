@@ -1,5 +1,5 @@
 import { postFeed } from '$lib/lemmy/postfeed.js'
-import { userSettings } from '$lib/settings.js'
+import { settings } from '$lib/settings.svelte'
 import type { SortType } from 'lemmy-js-client'
 import { get } from 'svelte/store'
 
@@ -11,7 +11,7 @@ export async function load({ params, fetch, url }) {
 
   const sort: SortType =
     (url.searchParams.get('sort') as SortType) ||
-    get(userSettings).defaultSort.sort
+    settings.defaultSort.sort
 
   return await postFeed({
     id: 'community',

@@ -1,15 +1,15 @@
 import { goto } from '$app/navigation'
 import { page } from '$app/stores'
-import { setUserID, type Profile } from '$lib/auth'
+import { setUserID, type Profile } from '$lib/auth.svelte'
 import {
   amModOfAny,
   isAdmin,
 } from '$lib/components/lemmy/moderation/moderation'
 import { resumables, type ResumableItem } from '$lib/lemmy/item'
-import { userSettings } from '$lib/settings'
+import { settings } from '$lib/settings.svelte'
 import { t } from '$lib/translations'
 import { colorScheme, theme, themeData, type ThemeData } from '$lib/ui/colors'
-import { fullCommunityName } from '$lib/util'
+import { fullCommunityName } from '$lib/util.svelte'
 import {
   ArrowRightOnRectangle,
   Bookmark,
@@ -68,7 +68,7 @@ export function getGroups(
   profile: Profile,
   profiles: Profile[],
   td: ThemeData,
-  contextual?: Action[]
+  contextual?: Action[],
 ) {
   return [
     {
@@ -339,10 +339,7 @@ export function getGroups(
               }),
               icon: ViewColumns,
               handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'compact',
-                })),
+                settings.view = 'compact'
             },
             {
               name: t.get('nav.commands.setViewTo', {
@@ -350,10 +347,7 @@ export function getGroups(
               }),
               icon: ViewColumns,
               handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'cozy',
-                })),
+                settings.view = 'cozy'
             },
             {
               name: t.get('nav.commands.setViewTo', {
@@ -361,21 +355,7 @@ export function getGroups(
               }),
               icon: ViewColumns,
               handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'list',
-                })),
-            },
-            {
-              name: t.get('nav.commands.setViewTo', {
-                default: t.get('filter.view.legacy'),
-              }),
-              icon: ViewColumns,
-              handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'card',
-                })),
+                settings.view = 'list'
             },
           ],
         },
@@ -444,7 +424,7 @@ export function getGroups(
           name: f.community.title,
           href: `/c/${fullCommunityName(
             f.community.name,
-            f.community.actor_id
+            f.community.actor_id,
           )}`,
           detail: new URL(f.community.actor_id).hostname,
         })) ?? [],

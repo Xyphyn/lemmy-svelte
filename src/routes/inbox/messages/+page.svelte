@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte.js'
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { publishedToDate } from '$lib/components/util/date.js'
@@ -35,11 +35,11 @@
   }
 
   function conversationPreviews(
-    conversations: PrivateMessageView[]
+    conversations: PrivateMessageView[],
   ): ConversationPreview[] {
     const deduplicated = filterDuplicates(
       conversations.toReversed(),
-      (i) => i.creator.id
+      (i) => i.creator.id,
     )
 
     return deduplicated.map((i) => ({
@@ -51,7 +51,7 @@
     }))
   }
 
-  export let data
+  let { data } = $props()
 </script>
 
 <Header pageHeader>
@@ -64,7 +64,7 @@
 {:then data}
   {@const conversations = data.private_messages}
   {@const previews = conversationPreviews(conversations).filter(
-    (c) => c.user.id != $profile?.user?.local_user_view.person.id
+    (c) => c.user.id != $profile?.user?.local_user_view.person.id,
   )}
 
   <ul

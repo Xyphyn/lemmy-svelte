@@ -1,18 +1,21 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import { page } from '$app/stores'
-  import { profile, setUserID, type Profile } from '$lib/auth.js'
+  import { profile, setUserID, type Profile } from '$lib/auth.svelte.js'
   import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte'
   import { LINKED_INSTANCE_URL } from '$lib/instance'
   import ProfileAvatar from '$lib/lemmy/ProfileAvatar.svelte'
   import { Button } from 'mono-svelte'
   import { Icon, QuestionMarkCircle } from 'svelte-hero-icons'
 
-  export let prof: Profile
-  export let index: number
+  let switching: boolean = $state(false)
+  interface Props {
+    prof: Profile
+    index: number
+    guest?: boolean
+  }
 
-  let switching: boolean = false
-  export let guest: boolean = false
+  let { prof, index, guest = false }: Props = $props()
 </script>
 
 <SidebarButton
@@ -21,7 +24,7 @@
   loading={switching}
   loaderWidth={20}
   selected={$profile?.id == prof.id}
-  on:click={async () => {
+  onclick={async () => {
     switching = true
 
     if ($profile?.id != prof.id) {
@@ -38,13 +41,14 @@
     ? '!bg-slate-100 dark:!bg-zinc-900'
     : ''}"
 >
-  <ProfileAvatar
-    profile={prof}
-    {index}
-    {guest}
-    selected={$profile?.id == prof.id}
-    slot="icon"
-  />
+  {#snippet customIcon()}
+    <ProfileAvatar
+      profile={prof}
+      {index}
+      {guest}
+      selected={$profile?.id == prof.id}
+    />
+  {/snippet}
   <span
     class="inline-flex flex-col gap-0 {$profile?.id == prof.id
       ? 'font-semibold'

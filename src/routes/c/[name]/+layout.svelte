@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let data
+  let { data, children } = $props();
 </script>
 
 <svelte:head>
@@ -16,4 +16,4 @@
     />
   {/if}
 </svelte:head>
-<slot />
+{@render children?.()}

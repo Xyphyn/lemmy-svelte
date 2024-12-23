@@ -3,7 +3,7 @@
   import { isImage, isVideo } from '$lib/ui/image.js'
   import { getInstance } from '$lib/lemmy.js'
   import PostActions from '$lib/components/lemmy/post/PostActions.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import PostLink from '$lib/components/lemmy/post/link/PostLink.svelte'
   import PostMeta, {
     parseTags,
@@ -28,38 +28,17 @@
   import PostMedia from '$lib/components/lemmy/post/media/PostMedia.svelte'
   import PostMediaCompact from '$lib/components/lemmy/post/media/PostMediaCompact.svelte'
   import PostBody from './PostBody.svelte'
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte'
   import { goto } from '$app/navigation'
-
-  export let post: PostView
-  export let actions: boolean = true
-  export let hideCommunity = false
-  export let view = $userSettings.view
-
-  $: tags = parseTags(post.post.name)
-  $: type = mediaType(post.post.url, view)
-  $: rule = getTagRule(tags.tags)
-
-  $: hideTitle =
-    $userSettings.posts.deduplicateEmbed &&
-    post.post.embed_title == post.post.name &&
-    view != 'compact' &&
-    type != 'iframe'
-
-  $: hideBody =
-    $userSettings.posts.deduplicateEmbed &&
-    post.post.embed_description == post.post.body &&
-    view != 'compact'
 
   function getTagRule(tags: Tag[]): 'blur' | 'hide' | undefined {
     const tagContent = tags.map((t) => t.content.toLowerCase())
 
     let rule: 'blur' | 'hide' | undefined
-    if ($userSettings.nsfwBlur && (post.post.nsfw || post.community.nsfw))
+    if (settings.nsfwBlur && (post.post.nsfw || post.community.nsfw))
       rule = 'blur'
     tagContent.forEach((tag) => {
-      if ($userSettings.tagRules?.[tag])
-        rule = $userSettings.tagRules?.[tag] ?? rule
+      if (settings.tagRules?.[tag]) rule = settings.tagRules?.[tag] ?? rule
       if (rule == 'hide') return rule
     })
 
@@ -74,6 +53,41 @@
       goto(postLink(post.post))
     }
   }
+
+  interface Props {
+    post: PostView
+    actions?: boolean
+    hideCommunity?: boolean
+    view?: any
+    style?: string
+    class?: string
+    badges?: import('svelte').Snippet
+  }
+
+  let {
+    post,
+    actions = true,
+    hideCommunity = false,
+    view = settings.view,
+    style = '',
+    class: clazz = '',
+    badges,
+  }: Props = $props()
+
+  let tags = $derived(parseTags(post.post.name))
+  let type = $derived(mediaType(post.post.url, view))
+  let rule = $derived(getTagRule(tags.tags))
+  let hideTitle = $derived(
+    settings.posts.deduplicateEmbed &&
+      post.post.embed_title == post.post.name &&
+      view != 'compact' &&
+      type != 'iframe',
+  )
+  let hideBody = $derived(
+    settings.posts.deduplicateEmbed &&
+      post.post.embed_description == post.post.body &&
+      view != 'compact',
+  )
 </script>
 
 <!-- 
@@ -81,27 +95,27 @@
   This is the sole component for displaying posts.
   It adapts to all kinds of form factors for different contexts, such as feeds, full post view, and crosspost list.
 -->
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
   class="post relative max-w-full min-w-0 w-full cursor-pointer outline-none
   group
-  {$userSettings.leftAlign ? 'left-align' : ''}
+  {settings.leftAlign ? 'left-align' : ''}
   {view == 'compact' ? 'py-3 list-type compact' : ''}
   {view == 'list' ? 'py-5 list-type' : ''}
   {view == 'cozy' ? 'py-5 flex flex-col gap-2' : ''}
-  {$$props.class ?? ''}"
+  {clazz ?? ''}"
   id={post.post.id.toString()}
-  on:click={(e) => {
+  onclick={(e) => {
     onClick(e)
   }}
-  on:keydown={(e) => {
+  onkeydown={(e) => {
     // @ts-ignore
     if (e.key == 'Enter') onClick(e)
   }}
   tabindex="0"
-  style={$$props.style ?? ''}
+  {style}
 >
   <PostMeta
     community={post.community}
@@ -131,7 +145,9 @@
     tags={tags?.tags}
     {view}
   >
-    <slot name="badges" slot="badges" />
+    {#snippet extraBadges()}
+      {@render badges?.()}
+    {/snippet}
   </PostMeta>
   {#key post.post.url}
     <div
@@ -151,7 +167,7 @@
       <PostMediaCompact
         post={post.post}
         {type}
-        class="{$userSettings.leftAlign
+        class="{settings.leftAlign
           ? 'mr-3'
           : 'ml-3'} flex-shrink no-list-margin"
         style="grid-area: media;"
@@ -170,15 +186,19 @@
     />
   {/if}
   {#if actions}
-    <PostActions on:hide {post} style="grid-area: actions;" {view} />
+    <PostActions on:hide bind:post style="grid-area: actions;" {view} />
   {:else if view == 'compact'}
     <div class="flex flex-row items-center gap-2 text-sm">
       <Badge>
-        <Icon src={ArrowUp} slot="icon" size="14" micro />
+        {#snippet icon()}
+          <Icon src={ArrowUp} size="14" micro />
+        {/snippet}
         {post.counts.score}
       </Badge>
       <Badge>
-        <Icon src={ChatBubbleOvalLeft} slot="icon" size="14" micro />
+        {#snippet icon()}
+          <Icon src={ChatBubbleOvalLeft} size="14" micro />
+        {/snippet}
         {post.counts.comments}
       </Badge>
     </div>
@@ -190,7 +210,7 @@
     group-hover:inset-y-0.5 group-hover:-inset-x-4 group-hover:sm:-inset-x-5 group-hover:opacity-100
     group-focus:inset-y-0.5 group-focus:-inset-x-4 group-focus:sm:-inset-x-5 group-focus:opacity-100
     duration-150"
-  />
+  ></div>
 </div>
 
 <style lang="postcss">

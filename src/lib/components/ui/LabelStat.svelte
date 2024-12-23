@@ -1,14 +1,30 @@
 <script lang="ts">
-  import FormattedNumber from "../util/FormattedNumber.svelte"
+  import FormattedNumber from '../util/FormattedNumber.svelte'
 
-  export let label: string
-  export let content: string
-  export let formatted: boolean = false
+  interface Props {
+    label: string
+    content: string
+    formatted?: boolean
+    labelClass?: string
+    contentClass?: string
+    class?: string
+  }
+
+  let {
+    label,
+    content,
+    formatted = false,
+    labelClass = '',
+    contentClass = '',
+    class: clazz = '',
+  }: Props = $props()
 </script>
 
-<div class="flex flex-col {$$props.class}">
-  <span class="text-slate-600 dark:text-zinc-400 text-xs {$$props.labelClass}">{label}</span>
-  <span class="text-base {$$props.contentClass}">
+<div class="flex flex-col {clazz}">
+  <span class="text-slate-600 dark:text-zinc-400 text-xs {labelClass}">
+    {label}
+  </span>
+  <span class="text-base {contentClass}">
     {#if formatted}
       <FormattedNumber number={Number(content)} />
     {:else}

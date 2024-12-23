@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export type Origin = keyof typeof popoverOrigins
 
   export const popoverOrigins = {
@@ -29,16 +29,37 @@
   import { focusTrap } from 'svelte-focus-trap'
   import { tick } from 'svelte'
 
-  export let openOnHover: boolean = false
-  export let open = false
-  export let placement: Placement = 'bottom-start'
-  export let middleware: Middleware[] = [offset(6), shift(), flip()]
-  export let strategy: Strategy = 'fixed'
-  export let manual: boolean = false
+  interface Props {
+    openOnHover?: boolean
+    open?: boolean
+    placement?: Placement
+    middleware?: Middleware[]
+    strategy?: Strategy
+    manual?: boolean
+    popoverClass?: string
+    class?: string
+    target?: import('svelte').Snippet
+    popover?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+  }
 
-  let canUseContents = true
+  let {
+    openOnHover = false,
+    open = $bindable(false),
+    placement = 'bottom-start',
+    middleware = [offset(6), shift(), flip()],
+    strategy = 'fixed',
+    manual = false,
+    popoverClass = '',
+    class: clazz = '',
+    target,
+    popover,
+    children,
+  }: Props = $props()
 
-  let el: any
+  let canUseContents = $state(true)
+
+  let el: any = $state()
 
   const [floatingRef, floatingContent] = createFloatingActions({
     strategy: strategy,
@@ -65,14 +86,14 @@
 </script>
 
 <svelte:body
-  on:click={(e) => {
+  onclick={(e) => {
     if (openOnHover) return
 
     if (!el?.contains(e.target) && open) {
       open = false
     }
   }}
-  on:keydown={async (e) => {
+  onkeydown={async (e) => {
     if (open && e.key == 'Escape') {
       open = false
       el?.firstChild.focus()
@@ -80,25 +101,23 @@
   }}
 />
 
-{#if $$slots.target}
+{#if target}
   <button
-    on:mouseover={() => (openOnHover ? (open = true) : false)}
-    on:mouseleave={() => (openOnHover ? (open = false) : false)}
-    on:focus={() => (openOnHover ? (open = true) : false)}
-    on:focusout={() => (openOnHover ? (open = false) : false)}
-    on:click={() => (!openOnHover && !manual ? (open = !open) : false)}
-    on:keydown={(e) => {
+    onmouseover={() => (openOnHover ? (open = true) : false)}
+    onmouseleave={() => (openOnHover ? (open = false) : false)}
+    onfocus={() => (openOnHover ? (open = true) : false)}
+    onfocusout={() => (openOnHover ? (open = false) : false)}
+    onclick={() => (!openOnHover && !manual ? (open = !open) : false)}
+    onkeydown={(e) => {
       if (e.key == 'Escape') open = false
     }}
     role="menu"
     type="button"
-    class="{canUseContents
-      ? 'contents text-left'
-      : 'w-max h-max'} {$$props.class}"
+    class="{canUseContents ? 'contents text-left' : 'w-max h-max'} {clazz}"
     bind:this={el}
     use:customFloatingRef
   >
-    <slot name="target" />
+    {@render target?.()}
   </button>
 {/if}
 
@@ -106,15 +125,15 @@
   <Portal class="z-[150]">
     <div
       transition:scale={{ duration: 200, start: 0.96, easing: backOut }}
-      class="z-[150] {$$props.popoverClass}"
+      class="z-[150] {popoverClass}"
       use:customFloatingContent
       use:focusTrap
     >
-      <slot name="popover">
+      {#if popover}{@render popover()}{:else}
         <Material elevation="high" color="distinct" class="flex flex-col">
-          <slot />
+          {@render children?.()}
         </Material>
-      </slot>
+      {/if}
     </div>
   </Portal>
 {/if}

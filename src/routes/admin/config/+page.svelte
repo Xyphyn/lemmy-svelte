@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { preventDefault } from 'svelte/legacy'
+
+  import { profile } from '$lib/auth.svelte.js'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { Label, Switch, toast } from 'mono-svelte'
   import { getClient } from '$lib/lemmy.js'
@@ -11,14 +13,20 @@
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data: PageData
+  interface Props {
+    data: PageData
+  }
 
-  const formData: Omit<EditSite, 'auth'> | undefined = data.site
-    ? {
-        ...data.site.site_view.local_site,
-        ...data.site.site_view.site,
-      }
-    : undefined
+  let { data }: Props = $props()
+
+  const formData: Omit<EditSite, 'auth'> | undefined = $state(
+    data.site
+      ? {
+          ...data.site.site_view.local_site,
+          ...data.site.site_view.site,
+        }
+      : undefined,
+  )
 
   async function save() {
     if (!$profile?.jwt) return
@@ -44,19 +52,19 @@
     saving = false
   }
 
-  let saving = false
+  let saving = $state(false)
 
-  let uploading = {
+  let uploading = $state({
     icon: false,
     banner: false,
-  }
+  })
 </script>
 
 <svelte:head>
   <title>{$t('routes.admin.title')}</title>
 </svelte:head>
 
-<form class="flex flex-col gap-4" on:submit|preventDefault={save}>
+<form class="flex flex-col gap-4" onsubmit={preventDefault(save)}>
   <Header pageHeader>{$t('routes.admin.config.title')}</Header>
   {#if formData}
     <TextInput bind:value={formData.name} label={$t('form.name')} />
@@ -78,7 +86,7 @@
       <Label>{$t('routes.admin.config.icon')}</Label>
       <button
         type="button"
-        on:click={() => (uploading.icon = !uploading.icon)}
+        onclick={() => (uploading.icon = !uploading.icon)}
         class="flex flex-col gap-4 bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-4 w-full h-32 rounded-xl"
       >
         {#if formData.icon}
@@ -106,7 +114,7 @@
       <Label>{$t('routes.admin.config.banner')}</Label>
       <button
         type="button"
-        on:click={() => (uploading.banner = !uploading.banner)}
+        onclick={() => (uploading.banner = !uploading.banner)}
         class="flex flex-col gap-4 bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-4 w-full h-32 rounded-xl"
       >
         {#if formData.banner}

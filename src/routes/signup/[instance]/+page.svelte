@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import { goto } from '$app/navigation'
   import { page } from '$app/stores'
-  import { setUser } from '$lib/auth.js'
+  import { setUser } from '$lib/auth.svelte.js'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import Avatar from '$lib/components/ui/Avatar.svelte'
@@ -23,32 +25,34 @@
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { t } from '$lib/translations.js'
 
-  export let data
+  let { data } = $props()
 
   const instance = $page.params.instance
 
   let captchaRequired = data.site_view.local_site.captcha_enabled
 
-  let email: string | undefined = ''
+  let email: string | undefined = $state('')
 
-  $: if (email == '') email = undefined
+  run(() => {
+    if (email == '') email = undefined
+  })
 
-  let username = '',
-    password = '',
-    passwordVerify = '',
-    captcha: GetCaptchaResponse | null = null,
-    verifyCaptcha: string | undefined = undefined,
-    application: string | undefined = undefined,
-    submitting: boolean = false,
-    honeypot: string | undefined = undefined,
-    nsfw: boolean = false
+  let username = $state(''),
+    password = $state(''),
+    passwordVerify = $state(''),
+    captcha: GetCaptchaResponse | null = $state(null),
+    verifyCaptcha: string | undefined = $state(undefined),
+    application: string | undefined = $state(undefined),
+    submitting: boolean = $state(false),
+    honeypot: string | undefined = $state(undefined),
+    nsfw: boolean = $state(false)
 
   const getCaptcha = async () =>
     (captcha = await getClient(instance, fetch).getCaptcha())
 
-  $: captchaAudio = captcha?.ok?.wav
-    ? `data:audio/wav;base64,${captcha.ok.wav}`
-    : ''
+  let captchaAudio = $derived(
+    captcha?.ok?.wav ? `data:audio/wav;base64,${captcha.ok.wav}` : '',
+  )
 
   async function submit() {
     submitting = true
@@ -115,7 +119,7 @@
 
 <form
   class="flex flex-col gap-4 max-w-2xl mx-auto h-full w-full"
-  on:submit|preventDefault={submit}
+  onsubmit={preventDefault(submit)}
 >
   <span class="flex gap-4 items-center font-bold text-xl text-center mx-auto">
     {#if data.site_view.site.icon}
@@ -172,7 +176,7 @@
                 alt="Captcha"
                 class="w-max"
               />
-              <audio controls src={captchaAudio} />
+              <audio controls src={captchaAudio}></audio>
             {:else}
               <Material
                 class="flex gap-2 dark:text-yellow-200 text-yellow-800 bg-yellow-500/20"
@@ -190,7 +194,7 @@
               {err}
             </Material>
           {/await}
-          <Button on:click={() => getCaptcha()} size="square-md">
+          <Button onclick={() => getCaptcha()} size="square-md">
             <Icon src={ArrowPath} size="16" mini />
           </Button>
           <TextInput required bind:value={verifyCaptcha} />

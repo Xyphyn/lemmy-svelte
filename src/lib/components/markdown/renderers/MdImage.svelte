@@ -7,11 +7,15 @@
   } from '$lib/components/lemmy/post/helpers'
   import PostIframe from '$lib/components/lemmy/post/media/PostIframe.svelte'
 
-  export let href: string
-  export let title: string | undefined = undefined
-  export let text: string = ''
+  interface Props {
+    href: string
+    title?: string | undefined
+    text?: string
+  }
 
-  $: type = mediaType(href, 'cozy')
+  let { href, title = undefined, text = '' }: Props = $props()
+
+  let type = $derived(mediaType(href, 'cozy'))
 </script>
 
 <div
@@ -29,7 +33,7 @@
   {:else}
     <button
       class="inline"
-      on:click={() => showImage(optimizeImageURL(href, -1), text)}
+      onclick={() => showImage(optimizeImageURL(href, -1), text)}
     >
       <img
         src={optimizeImageURL(href, 1024)}

@@ -16,6 +16,13 @@
     Icon,
     Photo,
   } from 'svelte-hero-icons'
+  /**
+   * @typedef {Object} Props
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { children } = $props();
 </script>
 
 <svelte:head>
@@ -57,33 +64,41 @@
     />
     {#if feature('mediaAndVotes', $site?.version)}
       <Menu class="flex-1" placement="bottom-end">
-        <Button
-          title={$t('post.actions.more.label')}
-          slot="target"
-          size="square-lg"
-          rounding="pill"
-          color="none"
-          class="bg-[#fff]/60 dark:bg-neutral-800/60
-        border border-gray-200/60 dark:border-neutral-800
-        backdrop-blur-xl shadow-xl hover:bg-slate-100 hover:dark:bg-zinc-800
-        flex-shrink-0"
-        >
-          <Icon src={EllipsisHorizontal} size="16" mini />
-        </Button>
+        {#snippet target()}
+                <Button
+            title={$t('post.actions.more.label')}
+            
+            size="square-lg"
+            rounding="pill"
+            color="none"
+            class="bg-[#fff]/60 dark:bg-neutral-800/60
+          border border-gray-200/60 dark:border-neutral-800
+          backdrop-blur-xl shadow-xl hover:bg-slate-100 hover:dark:bg-zinc-800
+          flex-shrink-0"
+          >
+            <Icon src={EllipsisHorizontal} size="16" mini />
+          </Button>
+              {/snippet}
         <MenuButton href="/profile/media">
-          <Icon src={Photo} size="16" mini slot="prefix" />
+          {#snippet prefix()}
+                    <Icon src={Photo} size="16" mini  />
+                  {/snippet}
           {$t('routes.profile.media.title')}
         </MenuButton>
         <MenuButton href="/profile/voted/up">
-          <Icon src={ArrowUp} size="16" micro slot="prefix" />
+          {#snippet prefix()}
+                    <Icon src={ArrowUp} size="16" micro  />
+                  {/snippet}
           {$t('routes.profile.upvoted')}
         </MenuButton>
         <MenuButton href="/profile/voted/down">
-          <Icon src={ArrowDown} size="16" micro slot="prefix" />
+          {#snippet prefix()}
+                    <Icon src={ArrowDown} size="16" micro  />
+                  {/snippet}
           {$t('routes.profile.downvoted')}
         </MenuButton>
       </Menu>
     {/if}
   </div>
-  <slot />
+  {@render children?.()}
 </div>

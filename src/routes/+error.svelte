@@ -39,7 +39,7 @@
   <div class="flex items-center gap-2">
     <Button
       rounding="xl"
-      on:click={() => goto($page.url, { invalidateAll: true })}
+      onclick={() => goto($page.url, { invalidateAll: true })}
     >
       {$t('message.retry')}
     </Button>

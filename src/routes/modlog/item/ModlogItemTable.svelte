@@ -6,7 +6,11 @@
   import type { ModLog } from '../+page.js'
   import ModlogAction from '../ModlogAction.svelte'
 
-  export let item: ModLog
+  interface Props {
+    item: ModLog;
+  }
+
+  let { item }: Props = $props();
 </script>
 
 <tr class="">
@@ -24,7 +28,7 @@
         user={item.moderator}
       />
     {:else}
-      <p class="text-slate-500 dark:text-zinc-500">Hidden<p/>
+      <p class="text-slate-500 dark:text-zinc-500">Hidden<p></p>
     {/if}
   </td>
   <td>

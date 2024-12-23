@@ -9,16 +9,26 @@
     Icon,
   } from 'svelte-hero-icons'
 
-  export let title: string
-  export let description: string | undefined = undefined
-  export let checked: boolean = false
-  export let beta = false
 
-  export let supportedPlatforms = {
+  interface Props {
+    title: string;
+    description?: string | undefined;
+    checked?: boolean;
+    beta?: boolean;
+    supportedPlatforms?: any;
+  }
+
+  let {
+    title,
+    description = undefined,
+    checked = $bindable(false),
+    beta = false,
+    supportedPlatforms = {
     desktop: true,
     tablet: true,
     mobile: true,
   }
+  }: Props = $props();
 </script>
 
 <div class="flex flex-col w-full justify-between gap-2 max-w-full">
@@ -30,19 +40,25 @@
       {#if Object.values(supportedPlatforms).some((v) => v == false)}
         {#if supportedPlatforms.desktop}
           <Badge>
-            <Icon src={ComputerDesktop} micro size="14" slot="icon" />
+            {#snippet icon()}
+                        <Icon src={ComputerDesktop} micro size="14"  />
+                      {/snippet}
             {$t('settings.desktop')}
           </Badge>
         {/if}
         {#if supportedPlatforms.tablet}
           <Badge>
-            <Icon src={DeviceTablet} micro size="14" slot="icon" />
+            {#snippet icon()}
+                        <Icon src={DeviceTablet} micro size="14"  />
+                      {/snippet}
             {$t('settings.tablet')}
           </Badge>
         {/if}
         {#if supportedPlatforms.mobile}
           <Badge>
-            <Icon src={DevicePhoneMobile} micro size="14" slot="icon" />
+            {#snippet icon()}
+                        <Icon src={DevicePhoneMobile} micro size="14"  />
+                      {/snippet}
             {$t('settings.mobile')}
           </Badge>
         {/if}

@@ -1,22 +1,29 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { site, validateInstance } from '$lib/lemmy.js'
   import { Button, Note, TextInput, toast } from 'mono-svelte'
   import { MINIMUM_VERSION } from '$lib/version'
   import { mayBeIncompatible } from '$lib/lemmy'
-  import { DOMAIN_REGEX_FORMS } from '$lib/util'
-  import { profile, profileData, type Profile } from '$lib/auth'
+  import { DOMAIN_REGEX_FORMS } from '$lib/util.svelte'
+  import { profile, profileData, type Profile } from '$lib/auth.svelte'
   import { LINKED_INSTANCE_URL } from '$lib/instance'
   import { goto } from '$app/navigation'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let ref: string = '/'
+  interface Props {
+    ref?: string
+    children?: import('svelte').Snippet
+  }
 
-  let form = {
+  let { ref = '/', children }: Props = $props()
+
+  let form = $state({
     instance: '',
     username: `${$t('account.guest')} ${$profileData.profiles.filter((p) => p.jwt == undefined).length + 1}`,
     loading: false,
-  }
+  })
 
   async function addGuest() {
     form.loading = true
@@ -51,9 +58,9 @@
 </script>
 
 <div class="max-w-xl w-full mx-auto h-max my-auto">
-  <form on:submit|preventDefault={addGuest} class="flex flex-col gap-5">
+  <form onsubmit={preventDefault(addGuest)} class="flex flex-col gap-5">
     <div class="flex flex-col gap-2">
-      <slot />
+      {@render children?.()}
       <Header>{$t('account.addGuest')}</Header>
       {#if $site && mayBeIncompatible(MINIMUM_VERSION, $site.version.replace('v', ''))}
         <Note>

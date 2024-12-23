@@ -1,8 +1,10 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import { Button, Modal, Select, Spinner, TextArea } from 'mono-svelte'
   import { text } from './translation'
   import { locale, t } from '$lib/translations'
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
   import { ArrowRight, Icon } from 'svelte-hero-icons'
   import MarkdownEditor from '../markdown/MarkdownEditor.svelte'
 
@@ -10,19 +12,25 @@
     translatedText: string
   }
 
-  export let open: boolean = false
+  interface Props {
+    open?: boolean
+  }
+
+  let { open = $bindable(false) }: Props = $props()
   let error = false
 
   const opened = () => translate($text)
 
-  $: if (open) opened()
+  run(() => {
+    if (open) opened()
+  })
 
-  let result: Promise<TranslateResponse> | undefined = undefined
-  let from = 'auto'
-  let to = $locale
+  let result: Promise<TranslateResponse> | undefined = $state(undefined)
+  let from = $state('auto')
+  let to = $state($locale)
 
   async function translate(text: string) {
-    const url = $userSettings.translator
+    const url = settings.translator
 
     if (!url) {
       return
@@ -53,9 +61,11 @@
 
 <Modal title={$t('post.actions.more.translate')} bind:open>
   <TextArea bind:value={$text} rows={2}>
-    <Button on:click={() => translate($text)} slot="suffix" color="primary">
-      {$t('post.actions.more.translate')}
-    </Button>
+    {#snippet suffix()}
+      <Button onclick={() => translate($text)} color="primary">
+        {$t('post.actions.more.translate')}
+      </Button>
+    {/snippet}
   </TextArea>
   <div class="flex items-center gap-2 w-full">
     <Select bind:value={from} class="flex-1">

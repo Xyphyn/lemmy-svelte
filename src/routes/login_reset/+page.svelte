@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import {
     DEFAULT_INSTANCE_URL,
@@ -9,9 +11,9 @@
   import { t } from '$lib/translations'
   import { Button, TextInput, toast } from 'mono-svelte'
 
-  let instance = LINKED_INSTANCE_URL || $currentInstance || ''
-  let email = ''
-  let loading = false
+  let instance = $state(LINKED_INSTANCE_URL || $currentInstance || '')
+  let email = $state('')
+  let loading = $state(false)
 
   async function submit() {
     loading = true
@@ -42,7 +44,7 @@
   <p>
     {$t('routes.resetLogin.description')}
   </p>
-  <form class="mt-2 flex flex-col gap-4" on:submit|preventDefault={submit}>
+  <form class="mt-2 flex flex-col gap-4" onsubmit={preventDefault(submit)}>
     {#if !LINKED_INSTANCE_URL}
       <TextInput
         bind:value={instance}

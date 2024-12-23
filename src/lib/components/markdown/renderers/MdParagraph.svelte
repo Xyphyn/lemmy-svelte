@@ -1,9 +1,16 @@
 <script>
   import { options } from '../Markdown.svelte'
+  /**
+   * @typedef {Object} Props
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { children } = $props()
 </script>
 
 <p class="leading-[1.5] {options.inline ? '' : 'max-w'}">
-  <slot />
+  {@render children?.()}
 </p>
 
 <style>

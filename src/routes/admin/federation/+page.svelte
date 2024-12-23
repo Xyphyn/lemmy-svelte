@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { run, preventDefault } from 'svelte/legacy'
+
+  import { profile } from '$lib/auth.svelte.js'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import EditableList from '$lib/components/ui/list/EditableList.svelte'
@@ -7,7 +9,7 @@
   import { publishedToDate } from '$lib/components/util/date.js'
   import { getClient } from '$lib/lemmy.js'
   import { t } from '$lib/translations.js'
-  import { trycatch } from '$lib/util.js'
+  import { trycatch } from '$lib/util.svelte.js'
   import type { Instance } from 'lemmy-js-client'
   import {
     Button,
@@ -29,17 +31,17 @@
   import { expoInOut, expoOut } from 'svelte/easing'
   import { slide } from 'svelte/transition'
 
-  export let data
+  let { data = $bindable() } = $props()
 
-  let blockInstance = {
+  let blockInstance = $state({
       instance: '',
       loading: false,
-    },
-    allowInstance = {
+    }),
+    allowInstance = $state({
       instance: '',
       loading: false,
-    },
-    saving = false
+    }),
+    saving = $state(false)
 
   const moderateInstance = async (instance: string, blocked: boolean) => {
     if (instance == '') return
@@ -56,12 +58,12 @@
 
       const blockedInstances =
         data.federated_instances.federated_instances.blocked.map(
-          (i) => i.domain
+          (i) => i.domain,
         )
 
       const allowedInstances =
         data.federated_instances.federated_instances.allowed.map(
-          (i) => i.domain
+          (i) => i.domain,
         )
 
       if (blocked) blockedInstances.push(instance)
@@ -95,11 +97,11 @@
 
       const blockedInstances =
         data.federated_instances.federated_instances.blocked.map(
-          (i) => i.domain
+          (i) => i.domain,
         )
       const allowedInstances =
         data.federated_instances.federated_instances.allowed.map(
-          (i) => i.domain
+          (i) => i.domain,
         )
 
       return await getClient().editSite({
@@ -117,7 +119,7 @@
     saving = false
   }
 
-  let csv: FileList | null
+  let csv: FileList | null = $state()
 
   async function parseCsv(files: FileList) {
     if (!(files.length > 0)) return
@@ -162,9 +164,9 @@
     reader.readAsText(files[0])
   }
 
-  $: {
+  run(() => {
     if (csv) parseCsv(csv)
-  }
+  })
 </script>
 
 <svelte:head>
@@ -173,26 +175,31 @@
 
 <Header pageHeader class="font-bold text-2xl flex items-center justify-between">
   {$t('routes.admin.federation.title')}
-  <Button color="primary" on:click={save} loading={saving} disabled={saving}>
+  <Button color="primary" onclick={save} loading={saving} disabled={saving}>
     {$t('common.save')}
   </Button>
 </Header>
 {#if data.site && data.federated_instances?.federated_instances?.blocked}
   <FileInput preview={false} bind:files={csv}>
-    <Button class="w-max" slot="button">
-      <Icon src={Plus} mini size="18" slot="prefix" />
-      {$t('routes.admin.federation.csv')}
-    </Button>
-    <svelte:fragment slot="choose">
+    {#snippet button()}
+      <Button class="w-max">
+        {#snippet prefix()}
+          <Icon src={Plus} mini size="18" />
+        {/snippet}
+        {$t('routes.admin.federation.csv')}
+      </Button>
+    {/snippet}
+    {#snippet choose()}
       {''}
-    </svelte:fragment>
+    {/snippet}
   </FileInput>
   <div class="flex flex-col md:flex-row gap-4">
     <div class="flex-1 w-full max-h-[42rem] h-full flex flex-col gap-2">
       <h2 class="font-bold text-lg">{$t('routes.admin.federation.blocked')}</h2>
       <form
-        on:submit|preventDefault={() =>
-          moderateInstance(blockInstance.instance, true)}
+        onsubmit={preventDefault(() =>
+          moderateInstance(blockInstance.instance, true),
+        )}
         class="flex flex-row gap-2"
       >
         <TextInput
@@ -215,7 +222,7 @@
             : ''}"
         >
           {#if data.federated_instances.federated_instances.blocked.length > 0}
-            {#each data.federated_instances.federated_instances.blocked.sort( (b, a) => b.domain.localeCompare(a.domain) ) as instance (instance.id)}
+            {#each data.federated_instances.federated_instances.blocked.sort( (b, a) => b.domain.localeCompare(a.domain), ) as instance (instance.id)}
               <div
                 animate:flip={{ duration: 300, easing: expoOut }}
                 class="flex justify-between items-center first:pt-0 last:pb-0"
@@ -232,17 +239,19 @@
                 </div>
                 <Button
                   size="square-md"
-                  on:click={() => {
+                  onclick={() => {
                     if (!data.federated_instances?.federated_instances?.blocked)
                       return
 
                     data.federated_instances.federated_instances.blocked =
                       data.federated_instances?.federated_instances?.blocked.filter(
-                        (i) => i.id != instance.id
+                        (i) => i.id != instance.id,
                       )
                   }}
                 >
-                  <Icon src={XMark} size="16" mini slot="prefix" />
+                  {#snippet prefix()}
+                    <Icon src={XMark} size="16" mini />
+                  {/snippet}
                 </Button>
               </div>
             {/each}
@@ -261,13 +270,14 @@
         <span>{$t('routes.admin.federation.allowed')}</span>
         {#if allowInstance.instance || !(data.federated_instances.federated_instances.allowed?.length == 0)}
           <Popover openOnHover placement="bottom-end">
-            <Icon
-              src={ExclamationTriangle}
-              solid
-              class="text-yellow-500"
-              slot="target"
-              size="20"
-            />
+            {#snippet target()}
+              <Icon
+                src={ExclamationTriangle}
+                solid
+                class="text-yellow-500"
+                size="20"
+              />
+            {/snippet}
             <p class="font-normal">
               {$t('routes.admin.federation.emptyAllow.description')}
             </p>
@@ -275,8 +285,9 @@
         {/if}
       </h2>
       <form
-        on:submit|preventDefault={() =>
-          moderateInstance(allowInstance.instance, false)}
+        onsubmit={preventDefault(() =>
+          moderateInstance(allowInstance.instance, false),
+        )}
         class="flex flex-row gap-2"
       >
         <TextInput
@@ -295,7 +306,7 @@
       <Material class="h-full overflow-auto" color="distinct">
         <EditableList class="[&>*]:py-3 dark:!divide-zinc-800 ">
           {#if data.federated_instances.federated_instances.allowed.length > 0}
-            {#each data.federated_instances.federated_instances.allowed.sort( (b, a) => b.domain.localeCompare(a.domain) ) as instance (instance.id)}
+            {#each data.federated_instances.federated_instances.allowed.sort( (b, a) => b.domain.localeCompare(a.domain), ) as instance (instance.id)}
               <div
                 animate:flip={{ duration: 300, easing: expoOut }}
                 class="flex justify-between items-center first:pt-0 last:pb-0"
@@ -312,17 +323,19 @@
                 </div>
                 <Button
                   size="square-md"
-                  on:click={() => {
+                  onclick={() => {
                     if (!data.federated_instances?.federated_instances?.allowed)
                       return
 
                     data.federated_instances.federated_instances.allowed =
                       data.federated_instances?.federated_instances?.allowed.filter(
-                        (i) => i.id != instance.id
+                        (i) => i.id != instance.id,
                       )
                   }}
                 >
-                  <Icon src={XMark} size="16" mini slot="prefix" />
+                  {#snippet prefix()}
+                    <Icon src={XMark} size="16" mini />
+                  {/snippet}
                 </Button>
               </div>
             {/each}
@@ -332,7 +345,7 @@
                 icon={Check}
                 title={$t('routes.admin.federation.emptyAllow.title')}
                 description={$t(
-                  'routes.admin.federation.emptyAllow.description'
+                  'routes.admin.federation.emptyAllow.description',
                 )}
               />
             </div>

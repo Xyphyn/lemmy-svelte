@@ -1,14 +1,19 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
   import type { PrivateMessageView } from 'lemmy-js-client'
 
-  export let message: PrivateMessageView
-  export let meta: boolean = true
+  interface Props {
+    message: PrivateMessageView
+    meta?: boolean
+    style?: string
+  }
+
+  let { message, meta = true, style = '' }: Props = $props()
 </script>
 
-<div class="flex flex-col gap-2 text-sm" style={$$props.style ?? ''}>
+<div class="flex flex-col gap-2 text-sm" {style}>
   {#if meta}
     <div class="flex flex-row gap-2 items-center flex-wrap">
       <span class="font-medium text-xs">From</span>

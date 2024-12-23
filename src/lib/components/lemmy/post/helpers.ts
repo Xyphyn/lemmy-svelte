@@ -1,7 +1,7 @@
 import { client, getInstance } from '$lib/lemmy.js'
-import type { View } from '$lib/settings'
+import type { View } from '$lib/settings.svelte'
 import { isImage, isVideo } from '$lib/ui/image'
-import { canParseUrl, findClosestNumber } from '$lib/util'
+import { canParseUrl, findClosestNumber } from '$lib/util.svelte'
 import type { CommentView, PersonView, Post, PostView } from 'lemmy-js-client'
 
 export const isCommentMutable = (comment: CommentView, me: PersonView) =>
@@ -10,7 +10,7 @@ export const isCommentMutable = (comment: CommentView, me: PersonView) =>
 export const bestImageURL = (
   post: Post,
   compact: boolean = true,
-  width: number = 1024
+  width: number = 1024,
 ) => {
   if (post.thumbnail_url) return optimizeImageURL(post.thumbnail_url, width)
   else if (post.url) return optimizeImageURL(post.url, width)
@@ -20,7 +20,7 @@ export const bestImageURL = (
 
 export const optimizeImageURL = (
   urlStr: string,
-  width: number = 1024
+  width: number = 1024,
 ): string => {
   try {
     const url = new URL(urlStr)
@@ -32,8 +32,8 @@ export const optimizeImageURL = (
         'thumbnail',
         findClosestNumber(
           [128, 196, 256, 512, 728, 1024, 1536],
-          width
-        ).toString()
+          width,
+        ).toString(),
       )
     }
 
@@ -82,7 +82,7 @@ export const iframeType = (url: string): IframeType => {
 export async function hidePost(
   id: number,
   hide: boolean,
-  jwt: string
+  jwt: string,
 ): Promise<boolean> {
   const res = await client({ auth: jwt }).hidePost({
     hide: hide,

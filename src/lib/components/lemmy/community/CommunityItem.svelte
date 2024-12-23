@@ -13,8 +13,8 @@
   } from 'svelte-hero-icons'
   import FormattedNumber from '$lib/components/util/FormattedNumber.svelte'
   import { Button, Modal } from 'mono-svelte'
-  import { fullCommunityName, isSubscribed } from '$lib/util.js'
-  import { profile } from '$lib/auth.js'
+  import { fullCommunityName, isSubscribed } from '$lib/util.svelte.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { addSubscription } from '$lib/lemmy/user.js'
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import CommunityCard from '$lib/components/lemmy/community/CommunityCard.svelte'
@@ -23,11 +23,22 @@
   import { t } from '$lib/translations'
   import Entity from '$lib/components/ui/Entity.svelte'
 
-  export let community: CommunityView
-  export let view: 'cozy' | 'compact' = 'compact'
-  export let showCounts: boolean = true
+  let showInfo = $state(false)
+  interface Props {
+    community: CommunityView
+    view?: 'cozy' | 'compact'
+    showCounts?: boolean
+    class?: string
+    icon?: import('svelte').Snippet
+  }
 
-  let showInfo = false
+  let {
+    community = $bindable(),
+    view = 'compact',
+    showCounts = true,
+    class: clazz = 'py-4 flex flex-col gap-4 text-sm max-w-full relative',
+    icon,
+  }: Props = $props()
 </script>
 
 {#if showInfo}
@@ -36,10 +47,7 @@
   </Modal>
 {/if}
 
-<div
-  class={$$props.class ??
-    'py-4 flex flex-col gap-4 text-sm max-w-full relative'}
->
+<div class={clazz}>
   <div
     class="flex
      {view == 'cozy'
@@ -49,7 +57,7 @@
     <a
       href="/c/{fullCommunityName(
         community.community.name,
-        community.community.actor_id
+        community.community.actor_id,
       )}"
       class="flex-1 w-full overflow-hidden"
       data-sveltekit-preload-data="tap"
@@ -59,13 +67,13 @@
           ? 'flex-col gap-2'
           : 'flex-row'} gap-2 items-center"
       >
-        <slot name="icon">
+        {#if icon}{@render icon()}{:else}
           <Avatar
             url={community.community.icon}
             width={32}
             alt={community.community.name}
           />
-        </slot>
+        {/if}
         <div
           class="flex flex-col overflow-hidden whitespace-nowrap flex-1 min-w-0 flex-shrink"
         >
@@ -90,53 +98,58 @@
       </div>
     </a>
     <div class="flex flex-row items-center gap-2">
-      <Button size="square-md" on:click={() => (showInfo = !showInfo)}>
+      <Button size="square-md" onclick={() => (showInfo = !showInfo)}>
         <Icon src={InformationCircle} size="16" micro />
       </Button>
-      <Subscribe {community} let:subscribe let:subscribing>
-        <Button
-          disabled={subscribing || !$profile?.jwt}
-          loading={subscribing}
-          on:click={async () => {
-            const res = await subscribe()
+      <Subscribe {community}>
+        {#snippet children({ subscribe, subscribing })}
+          <Button
+            disabled={subscribing || !$profile?.jwt}
+            loading={subscribing}
+            onclick={async () => {
+              const res = await subscribe()
 
-            if (res) {
-              const newSubscribed =
-                res.community_view.subscribed != 'NotSubscribed'
-                  ? 'Subscribed'
-                  : 'NotSubscribed'
+              if (res) {
+                const newSubscribed =
+                  res.community_view.subscribed != 'NotSubscribed'
+                    ? 'Subscribed'
+                    : 'NotSubscribed'
 
-              community.subscribed = newSubscribed
-              addSubscription(
-                community.community,
-                newSubscribed == 'Subscribed'
-              )
-            }
-          }}
-          size="custom"
-          title={isSubscribed(community.subscribed)
-            ? $t('cards.community.subscribed')
-            : $t('cards.community.subscribe')}
-          color={isSubscribed(community.subscribed) ? 'elevatedLow' : 'primary'}
-          class="{isSubscribed(community.subscribed)
-            ? 'text-slate-600 dark:text-zinc-400'
-            : ''}
-            aspect-square h-8 @md:px-2 @md:min-w-32 @md:aspect-auto"
-        >
-          <Icon
-            src={isSubscribed(community.subscribed) ? Check : Plus}
-            size="16"
-            micro
-            slot="prefix"
-          />
-          <span class="hidden @md:block">
-            {#if isSubscribed(community.subscribed)}
-              {$t('cards.community.subscribed')}
-            {:else}
-              {$t('cards.community.subscribe')}
-            {/if}
-          </span>
-        </Button>
+                community.subscribed = newSubscribed
+                addSubscription(
+                  community.community,
+                  newSubscribed == 'Subscribed',
+                )
+              }
+            }}
+            size="custom"
+            title={isSubscribed(community.subscribed)
+              ? $t('cards.community.subscribed')
+              : $t('cards.community.subscribe')}
+            color={isSubscribed(community.subscribed)
+              ? 'elevatedLow'
+              : 'primary'}
+            class="{isSubscribed(community.subscribed)
+              ? 'text-slate-600 dark:text-zinc-400'
+              : ''}
+              aspect-square h-8 @md:px-2 @md:min-w-32 @md:aspect-auto"
+          >
+            {#snippet prefix()}
+              <Icon
+                src={isSubscribed(community.subscribed) ? Check : Plus}
+                size="16"
+                micro
+              />
+            {/snippet}
+            <span class="hidden @md:block">
+              {#if isSubscribed(community.subscribed)}
+                {$t('cards.community.subscribed')}
+              {:else}
+                {$t('cards.community.subscribe')}
+              {/if}
+            </span>
+          </Button>
+        {/snippet}
       </Subscribe>
     </div>
   </div>

@@ -6,26 +6,47 @@
   import { optimizeImageURL } from '../lemmy/post/helpers'
   import FormattedNumber from '../util/FormattedNumber.svelte'
 
-  export let avatar: string | undefined = undefined
-  export let name: string
-  export let bio: string | undefined = undefined
-  export let banner: string | undefined = undefined
-  export let url: string | undefined = undefined
-  export let stats: {
+  interface Props {
+    avatar?: string | undefined
     name: string
-    value: string
-    format?: boolean
-  }[] = []
+    bio?: string | undefined
+    banner?: string | undefined
+    url?: string | undefined
+    stats?: {
+      name: string
+      value: string
+      format?: boolean
+    }[]
+    center?: boolean
+    class?: string
+    nameDetail?: import('svelte').Snippet
+    actions?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+    [key: string]: any
+  }
 
-  export let center: boolean = false
+  let {
+    avatar = undefined,
+    name,
+    bio = undefined,
+    banner = undefined,
+    url = undefined,
+    stats = [],
+    center = false,
+    class: clazz = '',
+    nameDetail,
+    actions,
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
 <Material
   color="transparent"
   padding="none"
   rounding="xl"
-  {...$$restProps}
-  class="z-10 relative border-slate-200 dark:border-zinc-700 {$$props.class}"
+  {...rest}
+  class="z-10 relative border-slate-200 dark:border-zinc-700 {clazz}"
 >
   {#if banner || avatar}
     <div class="max-h-36 overflow-visible">
@@ -69,12 +90,12 @@
         <span
           class="flex items-center gap-0 text-sm text-slate-600 dark:text-zinc-400 max-w-full w-max"
         >
-          <slot name="nameDetail" />
+          {@render nameDetail?.()}
         </span>
 
-        {#if $$slots.actions}
+        {#if actions}
           <div class="flex flex-col mt-2">
-            <slot name="actions" />
+            {@render actions?.()}
           </div>
         {/if}
       </div>
@@ -115,7 +136,7 @@
         {/each}
       </div>
     {/if}
-    <slot />
+    {@render children?.()}
   </div>
 </Material>
 

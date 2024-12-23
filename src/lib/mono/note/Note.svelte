@@ -2,7 +2,12 @@
   import { Material } from '../index.js'
   import { Icon, InformationCircle } from 'svelte-hero-icons'
 
-  export let content: string | undefined = undefined
+  interface Props {
+    content?: string | undefined;
+    children?: import('svelte').Snippet;
+  }
+
+  let { content = undefined, children }: Props = $props();
 </script>
 
 <Material
@@ -18,8 +23,8 @@
     class="text-primary-900 dark:text-primary-100"
   />
   <p>
-    {#if $$slots.default}
-      <slot />
+    {#if children}
+      {@render children?.()}
     {:else if content}
       {content}
     {/if}

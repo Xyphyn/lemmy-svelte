@@ -1,10 +1,18 @@
 <script lang="ts">
-  export let small: boolean = false
+  interface Props {
+    small?: boolean;
+    class?: string;
+    children?: import('svelte').Snippet;
+    [key: string]: any
+  }
+
+  let { small = false, class: clazz = '', children, ...rest }: Props = $props();
+  
 </script>
 
 <span
-  {...$$restProps}
-  class="{!small ? 'text-lg' : 'text-xs'} font-semibold {$$props.class}"
+  {...rest}
+  class="{!small ? 'text-lg' : 'text-xs'} font-semibold {clazz}"
 >
-  <slot />
+  {@render children?.()}
 </span>

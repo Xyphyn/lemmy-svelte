@@ -12,9 +12,19 @@
   import { backOut } from 'svelte/easing'
   import { fly } from 'svelte/transition'
 
-  export let page: number = 0
-  export let cursor: { next?: string; back?: string } | undefined = undefined
-  export let hasMore: boolean = true
+  interface Props {
+    page?: number
+    cursor?: { next?: string; back?: string } | undefined
+    hasMore?: boolean
+    children?: import('svelte').Snippet
+  }
+
+  let {
+    page = $bindable(0),
+    cursor = undefined,
+    hasMore = true,
+    children,
+  }: Props = $props()
 
   const dispatcher = createEventDispatcher<{ change: number; cursor: string }>()
 </script>
@@ -23,15 +33,15 @@
   aria-label={$t('aria.pagination.nav')}
   class="flex flex-row w-full gap-4 items-center justify-center"
 >
-  {#if $$slots.default}
+  {#if children}
     <span class="text-sm text-slate-600 dark:text-zinc-400 font-medium">
-      <slot />
+      {@render children?.()}
     </span>
     <hr class="border-slate-200 dark:border-zinc-800 flex-1" />
   {/if}
   <Button
     color="ghost"
-    on:click={() => {
+    onclick={() => {
       if (cursor?.back) dispatcher('cursor', cursor?.back)
       else dispatcher('change', --page)
     }}
@@ -41,7 +51,9 @@
     class="text-inherit dark:text-inherit disabled:!opacity-20 disabled:!bg-transparent"
     disabled={(!cursor?.back && cursor?.next) || page <= 1}
   >
-    <Icon src={ChevronLeft} size="24" mini slot="suffix" />
+    {#snippet suffix()}
+      <Icon src={ChevronLeft} size="24" mini />
+    {/snippet}
   </Button>
 
   {#if page}
@@ -61,7 +73,7 @@
 
   <Button
     color="ghost"
-    on:click={() => {
+    onclick={() => {
       if (cursor?.next) dispatcher('cursor', cursor?.next)
       else dispatcher('change', ++page)
     }}
@@ -71,6 +83,8 @@
     class="text-inherit dark:text-inherit"
     disabled={!hasMore}
   >
-    <Icon src={ChevronRight} size="24" mini slot="suffix" />
+    {#snippet suffix()}
+      <Icon src={ChevronRight} size="24" mini />
+    {/snippet}
   </Button>
 </nav>

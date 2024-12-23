@@ -1,4 +1,4 @@
-import { profile, profileData } from '$lib/auth'
+import { profile, profileData } from '$lib/auth.svelte'
 import type {
   CommentReportView,
   CommentView,

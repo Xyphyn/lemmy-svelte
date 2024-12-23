@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   import { env } from '$env/dynamic/public'
 
   import type { IconSource } from 'svelte-hero-icons'
@@ -18,7 +18,7 @@
   const badges = parseBadge()
 
   const getEnvBadge = (
-    actor_id: string
+    actor_id: string,
   ):
     | {
         classes: string
@@ -50,30 +50,48 @@
 <script lang="ts">
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import Logo from '$lib/components/ui/Logo.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import type { Person } from 'lemmy-js-client'
   import { Icon, Language, NoSymbol } from 'svelte-hero-icons'
 
-  export let user: Person
-  export let avatar: boolean = false
-  export let avatarSize: number = 24
-  export let badges: boolean = true
-  export let inComment: boolean = false
-  export let showInstance: boolean =
-    $userSettings.showInstances.user ||
-    ($userSettings.showInstances.comments && inComment)
-  export let displayName = $userSettings.displayNames
+  interface Props {
+    user: Person
+    avatar?: boolean
+    avatarSize?: number
+    badges?: boolean
+    inComment?: boolean
+    showInstance?: boolean
+    displayName?: any
+    instanceClass?: string
+    class?: string
+    children?: import('svelte').Snippet
+    extraBadges?: import('svelte').Snippet
+  }
 
-  $: envBadge = getEnvBadge(user.actor_id)
+  let {
+    user,
+    avatar = false,
+    avatarSize = 24,
+    badges = true,
+    inComment = false,
+    showInstance = settings.showInstances.user ||
+      (settings.showInstances.comments && inComment),
+    displayName = settings.displayNames,
+    instanceClass = '',
+    class: clazz = '',
+    children,
+    extraBadges,
+  }: Props = $props()
+
+  let envBadge = $derived(getEnvBadge(user.actor_id))
 </script>
 
 <a
-  class="items-center flex flex-row gap-1 hover:underline max-w-full min-w-0 {$$props.class ??
-    ''}"
+  class="items-center flex flex-row gap-1 hover:underline max-w-full min-w-0 {clazz}"
   href="/u/{user.name}@{new URL(user.actor_id).hostname}"
   data-sveltekit-preload-data="tap"
 >
-  <slot />
+  {@render children?.()}
   {#if avatar}
     <Avatar
       url={user.avatar}
@@ -94,7 +112,7 @@
     </span>
     {#if showInstance}
       <span
-        class="text-slate-500 dark:text-zinc-500 font-normal instance-text flex-shrink {$$props.instanceClass ??
+        class="text-slate-500 dark:text-zinc-500 font-normal instance-text flex-shrink {instanceClass ??
           ''}"
       >
         @{new URL(user.actor_id).hostname}
@@ -122,7 +140,7 @@
         />
       {/if}
     {/if}
-    <slot name="badges" />
+    {@render extraBadges?.()}
   {/if}
 </a>
 

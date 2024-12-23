@@ -5,13 +5,17 @@
   import { flip } from 'svelte/animate'
   import { expoOut } from 'svelte/easing'
 
-  export let items: {
-    avatar?: string
-    name: string
-    instance?: string
-    id: number
-    url: string
-  }[]
+  interface Props {
+    items: {
+      avatar?: string
+      name: string
+      instance?: string
+      id: number
+      url: string
+    }[]
+  }
+
+  let { items }: Props = $props()
 </script>
 
 {#each items.sort((a, b) => a.name.localeCompare(b.name)) as item (item.id)}
@@ -31,7 +35,6 @@
           alt={item.name}
           title={item.name}
           width={24}
-          slot="prefix"
         />
       </div>
       <div class="flex flex-col max-w-full break-words">

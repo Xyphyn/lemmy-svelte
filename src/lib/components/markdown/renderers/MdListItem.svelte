@@ -1,7 +1,7 @@
 <script>
-  export let tokens
+  let { tokens, children } = $props()
 </script>
 
 <li>
-  <slot />
+  {@render children?.()}
 </li>

@@ -9,7 +9,11 @@
   import type { ModLog } from '../+page.js'
   import ModlogAction from '../ModlogAction.svelte'
 
-  export let item: ModLog
+  interface Props {
+    item: ModLog;
+  }
+
+  let { item }: Props = $props();
 </script>
 
 <Material padding="lg" class="flex flex-col gap-2">

@@ -1,4 +1,4 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { client, getClient } from '$lib/lemmy.js'
 import { getItemPublished } from '$lib/lemmy/item.js'
 import type {

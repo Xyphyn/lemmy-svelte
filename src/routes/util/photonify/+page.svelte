@@ -1,10 +1,15 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { photonify } from '$lib/components/markdown/renderers/plugins'
   import { TextInput } from 'mono-svelte'
 
-  let link = ''
+  let link = $state('')
 
-  $: photonified = photonify(link)
+  let photonified;
+  run(() => {
+    photonified = photonify(link)
+  });
 </script>
 
 <h1 class="font-bold text-2xl">Photonify links</h1>

@@ -1,7 +1,11 @@
 <script lang="ts">
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
 
-  export let width = 48
+  interface Props {
+    width?: number
+  }
+
+  let { width = 48 }: Props = $props()
 
   const monthColors: {
     [x: number]: string
@@ -20,7 +24,7 @@
     12: '--hover-color-1: #228B22; --hover-color-2: #FFFFFF;',
   }
 
-  $: monthColor = monthColors[new Date().getMonth() + 1]
+  let monthColor = $derived(monthColors[new Date().getMonth() + 1])
 </script>
 
 <svg

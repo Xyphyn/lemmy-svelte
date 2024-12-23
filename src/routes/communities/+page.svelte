@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { navigating, page } from '$app/stores'
   import {
     GlobeAmericas,
@@ -8,7 +10,7 @@
     QuestionMarkCircle,
   } from 'svelte-hero-icons'
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import {
     Button,
     Material,
@@ -28,23 +30,21 @@
   import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
   import { fly } from 'svelte/transition'
   import { backOut, expoOut } from 'svelte/easing'
+  import { goto } from '$app/navigation'
 
-  export let data
+  let { data } = $props()
 
-  let search = data.query || ''
-  let searchElement: HTMLInputElement
+  let search = $state(data.query || '')
+  let searchElement: HTMLInputElement | undefined = $state()
   let instance = ''
 
-  let virtualList: HTMLDivElement
-  let offset: number = 0
-
-  $: showTop =
-    (data.query ?? '' != '') && data.communities.length > 0 && data.page == 1
+  let showTop = $derived(
+    (data.query ?? '' != '') && data.communities.length > 0 && data.page == 1,
+  )
 </script>
 
 <svelte:window
-  bind:scrollY={offset}
-  on:keydown={(e) => {
+  onkeydown={(e) => {
     if (e.target == document.body) searchElement?.focus()
   }}
 />
@@ -56,19 +56,21 @@
 <Header pageHeader class="justify-between">
   <span>{$t('routes.communities.title')}</span>
 </Header>
+
 <div
   class="mt-4 mb-0 sticky z-30"
   style="top: max(1.5rem, {$contentPadding.top}px);"
 >
   <Tabs routes={[]} class="p-2 dark:bg-zinc-925/70 shadow-md shadow-black/5">
     <form
-      on:submit|preventDefault={() =>
-        searchParam($page.url, 'q', search, 'page')}
+      method="get"
+      action="/communities"
       class="flex gap-2 flex-row items-center w-full text-base h-10"
     >
       <TextInput
         bind:value={search}
         bind:element={searchElement}
+        name="q"
         aria-label={$t('routes.search.query')}
         size="lg"
         class="flex-1 !rounded-full h-full"
@@ -83,7 +85,9 @@
         rounding="pill"
         loading={$navigating != null}
       >
-        <Icon src={MagnifyingGlass} size="16" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={MagnifyingGlass} size="16" micro />
+        {/snippet}
       </Button>
     </form>
   </Tabs>
@@ -145,7 +149,7 @@
   {/if}
   {#if data.communities}
     {@const sliced = data.communities.slice(showTop ? 3 : 0)}
-    <div class="-mx-4 sm:-mx-6 h-full" bind:this={virtualList}>
+    <div class="-mx-4 sm:-mx-6 h-full">
       {#each sliced as community, index (community.community.id)}
         <div
           class="px-6 hover:bg-slate-50 hover:dark:bg-zinc-900 transition-colors @container

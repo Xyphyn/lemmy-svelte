@@ -1,4 +1,4 @@
-import { fullCommunityName } from '$lib/util'
+import { fullCommunityName } from '$lib/util.svelte'
 import type { Community, Person } from 'lemmy-js-client'
 
 export const communityLink = (community: Community, prefix: string = '') =>

@@ -1,5 +1,5 @@
 <script>
-  import { DOMAIN_REGEX_FORMS } from '$lib/util'
+  import { DOMAIN_REGEX_FORMS } from '$lib/util.svelte'
 </script>
 
 <h1 class="font-bold text-2xl">Constants</h1>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy';
+
   import { Button, Material, Spinner, TextInput, toast } from 'mono-svelte'
   import Message from './Message.svelte'
   import { t } from '$lib/translations'
@@ -15,14 +17,14 @@
   import { report } from '$lib/components/lemmy/moderation/moderation'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
 
-  export let data
+  let { data = $bindable() } = $props();
 
-  let textbox = {
+  let textbox = $state({
     message: '',
     loading: false,
-  }
+  })
 
-  let chatWindow: HTMLDivElement
+  let chatWindow: HTMLDivElement = $state()
 
   async function sendMessage(
     message: string
@@ -50,11 +52,13 @@
     textbox.loading = false
   }
 
-  $: if (browser && data.message && chatWindow) {
-    tick().then(() =>
-      chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' })
-    )
-  }
+  run(() => {
+    if (browser && data.message && chatWindow) {
+      tick().then(() =>
+        chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' })
+      )
+    }
+  });
 
   async function deleteMessage(id: number) {
     const res = await client().deletePrivateMessage({
@@ -85,7 +89,7 @@
 >
   <div class="h-full overflow-auto" bind:this={chatWindow}>
     <ul id="chat-window" class="flex flex-col gap-1 flex-1 px-4 py-4">
-      <div class="mt-auto" />
+      <div class="mt-auto"></div>
       {#each data.message.private_messages.toReversed() as private_message, index (private_message.private_message.id)}
         <div
           class={private_message.creator.id == data.creator
@@ -117,7 +121,7 @@
     border-slate-200 dark:border-zinc-800
    p-2 gap-2 backdrop-blur-xl
    bg-white/50 dark:bg-zinc-950/50 border rounded-2xl"
-      on:submit|preventDefault={async () => {
+      onsubmit={preventDefault(async () => {
         const res = await sendMessage(textbox.message)
         if (!res) return
 
@@ -129,7 +133,7 @@
         }
 
         textbox.message = ''
-      }}
+      })}
     >
       <TextInput
         bind:value={textbox.message}
@@ -146,7 +150,9 @@
         loading={textbox.loading}
         disabled={textbox.loading}
       >
-        <Icon src={PaperAirplane} size="18" micro slot="prefix" />
+        {#snippet prefix()}
+                <Icon src={PaperAirplane} size="18" micro  />
+              {/snippet}
       </Button>
     </form>
   </div>

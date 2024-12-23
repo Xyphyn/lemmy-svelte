@@ -1,6 +1,6 @@
-import { profile, profileData, type Profile } from '$lib/auth.js'
+import { profile, profileData, type Profile } from '$lib/auth.svelte'
 import { getClient } from '$lib/lemmy.js'
-import { trycatch } from '$lib/util.js'
+import { trycatch } from '$lib/util.svelte'
 import type { Community, MyUserInfo, PersonView } from 'lemmy-js-client'
 import { get } from 'svelte/store'
 

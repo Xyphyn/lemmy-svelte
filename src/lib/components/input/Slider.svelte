@@ -1,8 +1,15 @@
 <script lang="ts">
-  export let value: number
-  export let min: number = 0
-  export let max: number = 100
-  export let step: number = 1
+  import { createBubbler } from 'svelte/legacy'
+
+  const bubble = createBubbler()
+  interface Props {
+    value: number
+    min?: number
+    max?: number
+    step?: number
+  }
+
+  let { value = $bindable(), min = 0, max = 100, step = 1 }: Props = $props()
 </script>
 
 <input
@@ -11,10 +18,10 @@
   {min}
   {max}
   {step}
-  on:change
-  on:click
-  on:keydown
-  on:keypress
+  onchange={bubble('change')}
+  onclick={bubble('click')}
+  onkeydown={bubble('keydown')}
+  onkeypress={bubble('keypress')}
   class="w-full appearance-none h-2 cursor-pointer bg-slate-100 dark:bg-zinc-800
   rounded-full range"
 />

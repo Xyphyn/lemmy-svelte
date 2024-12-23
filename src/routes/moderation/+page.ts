@@ -1,4 +1,4 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { isAdmin } from '$lib/components/lemmy/moderation/moderation.js'
 import { getClient } from '$lib/lemmy.js'
 import {

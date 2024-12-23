@@ -1,4 +1,4 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { client } from '$lib/lemmy.js'
 import { redirect } from '@sveltejs/kit'
 import { get } from 'svelte/store'

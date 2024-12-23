@@ -5,9 +5,6 @@ export interface CommentNodeI {
   children: Array<CommentNodeI>
   depth: number
   loading?: boolean
-  ui: {
-    open?: boolean
-  }
 }
 
 function getCommentParentId(comment?: Comment): number | undefined {
@@ -28,7 +25,7 @@ function getDepthFromComment(comment?: Comment): number | undefined {
 export function buildCommentsTree(
   comments: CommentView[],
   baseDepth: number = 0,
-  filter: (c: CommentView) => boolean = (c) => true
+  filter: (c: CommentView) => boolean = (c) => true,
 ): CommentNodeI[] {
   const start = performance.now()
   const map = new Map<number, CommentNodeI>()
@@ -40,10 +37,7 @@ export function buildCommentsTree(
     const node: CommentNodeI = {
       comment_view,
       children: [],
-      depth: depth,
-      ui: {
-        open: true,
-      },
+      depth: depth
     }
     min_depth = Math.min(min_depth, depth)
     if (filter(comment_view)) {
@@ -81,7 +75,7 @@ export function buildCommentsTree(
 
 export function searchCommentTree(
   tree: CommentNodeI[],
-  id: number
+  id: number,
 ): CommentNodeI | undefined {
   for (const node of tree) {
     if (node.comment_view.comment.id === id) {
@@ -102,14 +96,13 @@ export function searchCommentTree(
 export function insertCommentIntoTree(
   tree: CommentNodeI[],
   cv: CommentView,
-  parentComment: boolean
+  parentComment: boolean,
 ) {
   // Building a fake node to be used for later
   const node: CommentNodeI = {
     comment_view: cv,
     children: [],
     depth: 0,
-    ui: {},
   }
 
   const parentId = getCommentParentId(cv.comment)

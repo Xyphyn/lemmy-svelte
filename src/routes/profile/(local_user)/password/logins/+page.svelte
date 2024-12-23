@@ -7,11 +7,11 @@
 
   import { UAParser } from 'ua-parser-js'
 
-  export let data
+  let { data } = $props();
 
   let checked: {
     [token: string]: boolean
-  } = {}
+  } = $state({})
 </script>
 
 <Material

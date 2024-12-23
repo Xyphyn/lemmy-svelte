@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Routebar from './Routebar.svelte';
   import Button from '../button/Button.svelte'
 
   type Route = string
@@ -9,14 +10,24 @@
     name: string
   }
 
-  /**
+  
+
+  interface Props {
+    /**
    * The routes for the routebar.
    */
-  export let routes: RouteObject[]
-  export let currentRoute: Route | undefined = undefined
+    routes: RouteObject[];
+    currentRoute?: Route | undefined;
+    parentRoute?: Route | undefined;
+    depth?: number;
+  }
 
-  export let parentRoute: Route | undefined = undefined
-  export let depth: number = 0
+  let {
+    routes,
+    currentRoute = undefined,
+    parentRoute = undefined,
+    depth = 0
+  }: Props = $props();
 </script>
 
 <svelte:element this={depth == 0 ? 'nav' : 'ul'} class="flex flex-col h-full">
@@ -36,7 +47,7 @@
       >
         {route.name}
       </Button>
-      <svelte:self
+      <Routebar
         routes={route.children}
         {currentRoute}
         {parentRoute}

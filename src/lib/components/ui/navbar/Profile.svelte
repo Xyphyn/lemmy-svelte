@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { notifications, profile } from '$lib/auth'
+  import { stopPropagation } from 'svelte/legacy'
+
+  import { notifications, profile } from '$lib/auth.svelte'
 
   import {
     Badge,
@@ -32,13 +34,20 @@
     UserGroup,
   } from 'svelte-hero-icons'
   import { colorScheme } from '$lib/ui/colors'
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
   import { site } from '$lib/lemmy'
   import SiteCard from '$lib/components/lemmy/SiteCard.svelte'
   import { t } from '$lib/translations'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
 
-  let showInstance = false
+  let showInstance = $state(false)
+
+  interface Props {
+    buttonClass?: string
+    [key: string]: any
+  }
+
+  let { buttonClass = '', ...rest }: Props = $props()
 </script>
 
 {#if showInstance}
@@ -56,35 +65,36 @@
   </Modal>
 {/if}
 
-<Menu {...$$restProps}>
-  <button
-    class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-zinc-700
-    transition-all bg-slate-50 dark:bg-zinc-900 relative
-    hover:border-primary-900 hover:dark:border-primary-100 active:scale-95 {$$props.buttonClass}"
-    title={$t('profile.profile')}
-    slot="target"
-  >
-    {#if $profile?.user}
-      <div
-        class="w-full h-full aspect-square object-cover rounded-full grid place-items-center"
-      >
-        <Avatar
-          url={$profile.user.local_user_view.person.avatar}
-          width={36}
-          alt={$profile.user.local_user_view.person.name}
-        />
-      </div>
-      {#if $notifications.inbox > 0}
+<Menu {...rest}>
+  {#snippet target()}
+    <button
+      class="w-10 h-10 rounded-full border-2 border-slate-200 dark:border-zinc-700
+      transition-all bg-slate-50 dark:bg-zinc-900 relative
+      hover:border-primary-900 hover:dark:border-primary-100 active:scale-95 {buttonClass}"
+      title={$t('profile.profile')}
+    >
+      {#if $profile?.user}
         <div
-          class="rounded-full w-2 h-2 bg-red-500 absolute top-0 left-0 z-10"
-        />
+          class="w-full h-full aspect-square object-cover rounded-full grid place-items-center"
+        >
+          <Avatar
+            url={$profile.user.local_user_view.person.avatar}
+            width={36}
+            alt={$profile.user.local_user_view.person.name}
+          />
+        </div>
+        {#if $notifications.inbox > 0}
+          <div
+            class="rounded-full w-2 h-2 bg-red-500 absolute top-0 left-0 z-10"
+          ></div>
+        {/if}
+      {:else}
+        <div class="w-full h-full grid place-items-center">
+          <Icon src={Bars3} micro size="18" />
+        </div>
       {/if}
-    {:else}
-      <div class="w-full h-full grid place-items-center">
-        <Icon src={Bars3} micro size="18" />
-      </div>
-    {/if}
-  </button>
+    </button>
+  {/snippet}
   {#if $profile?.user}
     <UserLink
       user={$profile?.user.local_user_view.person}
@@ -99,11 +109,15 @@
   {/if}
   {#if $profile?.jwt}
     <MenuButton link href="/profile">
-      <Icon src={UserCircle} micro width={16} slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={UserCircle} micro width={16} />
+      {/snippet}
       {$t('profile.profile')}
     </MenuButton>
     <MenuButton link href="/inbox">
-      <Icon src={Inbox} micro width={16} slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={Inbox} micro width={16} />
+      {/snippet}
       {$t('profile.inbox')}
       {#if $notifications.inbox > 0}
         <Badge color="red-subtle" class="text-xs ml-auto font-bold !py-0.5">
@@ -112,36 +126,43 @@
       {/if}
     </MenuButton>
     <MenuButton link href="/saved">
-      <Icon src={Bookmark} micro width={16} slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={Bookmark} micro width={16} />
+      {/snippet}
       {$t('profile.saved')}
     </MenuButton>
   {/if}
   <MenuButton link href="/accounts">
-    <Icon src={UserGroup} micro width={16} slot="prefix" />
+    {#snippet prefix()}
+      <Icon src={UserGroup} micro width={16} />
+    {/snippet}
     {$t('account.accounts')}
   </MenuButton>
   <MenuDivider>{$t('nav.menu.app')}</MenuDivider>
   <MenuButton link href="/settings">
-    <Icon src={Cog6Tooth} micro width={16} slot="prefix" />
+    {#snippet prefix()}
+      <Icon src={Cog6Tooth} micro width={16} />
+    {/snippet}
     {$t('nav.menu.settings')}
   </MenuButton>
   <MenuButton class="!py-0">
-    <Icon
-      src={$colorScheme == 'system'
-        ? ComputerDesktop
-        : $colorScheme == 'light'
-          ? Sun
-          : $colorScheme == 'dark'
-            ? Moon
-            : Moon}
-      micro
-      size="16"
-      slot="prefix"
-    />
+    {#snippet prefix()}
+      <Icon
+        src={$colorScheme == 'system'
+          ? ComputerDesktop
+          : $colorScheme == 'light'
+            ? Sun
+            : $colorScheme == 'dark'
+              ? Moon
+              : Moon}
+        micro
+        size="16"
+      />
+    {/snippet}
     <span>{$t('nav.menu.colorscheme.label')}</span>
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
-    <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="contents" on:click|stopPropagation={() => {}}>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="contents" onclick={stopPropagation(() => {})}>
       <Select bind:value={$colorScheme} class="ml-auto my-auto w-24" size="sm">
         <option value="system">
           <Icon src={ComputerDesktop} size="16" micro />
@@ -159,23 +180,27 @@
     </div>
   </MenuButton>
   <MenuButton href="/theme">
-    <Icon src={Swatch} size="16" micro slot="prefix" />
+    {#snippet prefix()}
+      <Icon src={Swatch} size="16" micro />
+    {/snippet}
     {$t('nav.menu.theme')}
   </MenuButton>
-  {#if $userSettings.debugInfo}
+  {#if settings.debugInfo}
     <MenuButton link href="/util">
-      <Icon src={BugAnt} mini width={16} slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={BugAnt} mini width={16} />
+      {/snippet}
       Debug
     </MenuButton>
   {/if}
   <hr class="dark:opacity-10 w-[90%] my-2 mx-auto" />
   <li class="flex flex-col px-2 py-1 mx-auto my-1 text-xs w-full">
     <div class="flex flex-row gap-2 w-full items-center">
-      <!-- svelte-ignore missing-declaration -->
+      <!-- svelte-ignore missing_declaration -->
       <div class="flex-1">
         <button
           class="hover:brightness-110 transition-all"
-          on:click={() => {
+          onclick={() => {
             navigator?.clipboard?.writeText(__VERSION__)
             toast({ content: $t('toast.copied') })
           }}
@@ -184,7 +209,7 @@
         </button>
       </div>
       <Button
-        on:click={() => (showInstance = !showInstance)}
+        onclick={() => (showInstance = !showInstance)}
         color="tertiary"
         title={$t('nav.menu.instance')}
         size="square-md"

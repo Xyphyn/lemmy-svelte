@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte'
   import EntityHeader from '$lib/components/ui/EntityHeader.svelte'
   import { t } from '$lib/translations'
-  import { fullCommunityName } from '$lib/util'
+  import { fullCommunityName } from '$lib/util.svelte'
   import type {
     Community,
     CommunityAggregates,
@@ -31,11 +31,23 @@
   import { isAdmin } from '../moderation/moderation'
   import { block, blockInstance, purgeCommunity } from './CommunityCard.svelte'
 
-  export let community: Community
-  export let subscribed: SubscribedType
-  export let counts: CommunityAggregates | undefined = undefined
-  export let moderators: CommunityModeratorView[] = []
-  export let blocked: boolean = false
+  interface Props {
+    community: Community
+    subscribed: SubscribedType
+    counts?: CommunityAggregates | undefined
+    moderators?: CommunityModeratorView[]
+    blocked?: boolean
+    class?: string
+  }
+
+  let {
+    community = $bindable(),
+    subscribed = $bindable(),
+    counts = undefined,
+    moderators = [],
+    blocked = false,
+    class: clazz = '',
+  }: Props = $props()
 </script>
 
 <EntityHeader
@@ -67,29 +79,30 @@
       ]
     : []}
   bio={community.description}
-  class={$$props.class}
+  class={clazz}
 >
-  <button
-    on:click={() => {
-      navigator?.clipboard?.writeText?.(
-        `!${fullCommunityName(community.name, community.actor_id)}`
-      )
-      toast({ content: $t('toast.copied') })
-    }}
-    class="text-sm flex gap-0 items-center"
-    slot="nameDetail"
-  >
-    !{fullCommunityName(community.name, community.actor_id)}
-  </button>
+  {#snippet nameDetail()}
+    <button
+      onclick={() => {
+        navigator?.clipboard?.writeText?.(
+          `!${fullCommunityName(community.name, community.actor_id)}`,
+        )
+        toast({ content: $t('toast.copied') })
+      }}
+      class="text-sm flex gap-0 items-center"
+    >
+      !{fullCommunityName(community.name, community.actor_id)}
+    </button>
+  {/snippet}
   {#if moderators.length > 0}
     <Expandable
       class="border rounded-xl bg-white/50 dark:bg-zinc-900/50 w-full p-3 px-4
 dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text-zinc-300 transition-colors"
     >
-      <svelte:fragment slot="title">
+      {#snippet title()}
         <ShieldIcon width={15} filled />
         {$t('cards.community.moderators')}
-      </svelte:fragment>
+      {/snippet}
       <ItemList
         items={moderators.map((m) => ({
           id: m.moderator.id,
@@ -112,30 +125,32 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
           counts: counts ?? {},
           subscribed: subscribed,
         }}
-        let:subscribe
-        let:subscribing
       >
-        <Button
-          disabled={subscribing}
-          loading={subscribing}
-          size="lg"
-          color={subscribed == 'NotSubscribed' ? 'primary' : 'secondary'}
-          on:click={async () => {
-            subscribed =
-              (await subscribe())?.community_view.subscribed ?? 'NotSubscribed'
-          }}
-          class="flex-1 relative z-[inherit]"
-        >
-          <Icon
-            src={subscribed != 'NotSubscribed' ? Check : Plus}
-            micro
-            size="16"
-            slot="prefix"
-          />
-          {subscribed == 'Subscribed' || subscribed == 'Pending'
-            ? $t('cards.community.subscribed')
-            : $t('cards.community.subscribe')}
-        </Button>
+        {#snippet children({ subscribe, subscribing })}
+          <Button
+            disabled={subscribing}
+            loading={subscribing}
+            size="lg"
+            color={subscribed == 'NotSubscribed' ? 'primary' : 'secondary'}
+            onclick={async () => {
+              subscribed =
+                (await subscribe())?.community_view.subscribed ??
+                'NotSubscribed'
+            }}
+            class="flex-1 relative z-[inherit]"
+          >
+            {#snippet prefix()}
+              <Icon
+                src={subscribed != 'NotSubscribed' ? Check : Plus}
+                micro
+                size="16"
+              />
+            {/snippet}
+            {subscribed == 'Subscribed' || subscribed == 'Pending'
+              ? $t('cards.community.subscribed')
+              : $t('cards.community.subscribe')}
+          </Button>
+        {/snippet}
       </Subscribe>
     {/if}
 
@@ -148,7 +163,7 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
         rounding="xl"
         href="/c/{fullCommunityName(
           community.name,
-          community.actor_id
+          community.actor_id,
         )}/settings"
         style="height: 38px; width: 38px;"
       >
@@ -156,14 +171,13 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
       </Button>
     {/if}
     <Menu placement="top-end">
-      <Button
-        rounding="xl"
-        size="custom"
-        slot="target"
-        style="height: 38px; width: 38px;"
-      >
-        <Icon src={EllipsisHorizontal} size="16" mini slot="prefix" />
-      </Button>
+      {#snippet target()}
+        <Button rounding="xl" size="custom" style="height: 38px; width: 38px;">
+          {#snippet prefix()}
+            <Icon src={EllipsisHorizontal} size="16" mini />
+          {/snippet}
+        </Button>
+      {/snippet}
       <MenuButton href="/modlog?community={community.id}">
         <Icon src={Newspaper} size="16" mini />
         {$t('cards.community.modlog')}
@@ -172,9 +186,11 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
         <MenuButton
           color="danger-subtle"
           size="lg"
-          on:click={() => block(community.id, !blocked)}
+          onclick={() => block(community.id, !blocked)}
         >
-          <Icon src={NoSymbol} size="16" mini slot="prefix" />
+          {#snippet prefix()}
+            <Icon src={NoSymbol} size="16" mini />
+          {/snippet}
           {blocked
             ? $t('cards.community.unblock')
             : $t('cards.community.block')}
@@ -183,16 +199,18 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
           <MenuButton
             color="danger-subtle"
             size="lg"
-            on:click={() => blockInstance(community.instance_id)}
+            onclick={() => blockInstance(community.instance_id)}
           >
-            <Icon src={BuildingOffice2} size="16" mini slot="prefix" />
+            {#snippet prefix()}
+              <Icon src={BuildingOffice2} size="16" mini />
+            {/snippet}
             {$t('cards.community.blockInstance')}
           </MenuButton>
         {/if}
         {#if $profile?.user && isAdmin($profile.user)}
           <MenuButton
             color="danger-subtle"
-            on:click={() =>
+            onclick={() =>
               modal({
                 title: $t('admin.purgeCommunity.title'),
                 body: `${community.title}: ${$t('admin.purgeCommunity.warning')}`,
@@ -213,7 +231,9 @@ dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text
                 type: 'error',
               })}
           >
-            <Icon src={Fire} size="16" mini slot="prefix" />
+            {#snippet prefix()}
+              <Icon src={Fire} size="16" mini />
+            {/snippet}
             {$t('admin.purge')}
           </MenuButton>
         {/if}

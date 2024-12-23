@@ -3,21 +3,14 @@
   import { getClient } from '$lib/lemmy.js'
   import { createEventDispatcher } from 'svelte'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { toast } from 'mono-svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
-  import { placeholders } from '$lib/util.js'
+  import { placeholders } from '$lib/util.svelte.js'
   import { Button } from 'mono-svelte'
   import { t } from '$lib/translations'
   import { errorMessage } from '$lib/lemmy/error'
   import { Icon, XMark } from 'svelte-hero-icons'
-
-  export let postId: number
-  export let parentId: number | undefined = undefined
-  export let locked: boolean = false
-  export let banned: boolean = false
-  export let rows: number = 7
-  export let placeholder: string | undefined = undefined
 
   const dispatch = createEventDispatcher<{
     comment: CommentResponse
@@ -25,13 +18,33 @@
     cancel: boolean
   }>()
 
-  export let value = ''
-  export let actions = true
+  interface Props {
+    postId: number
+    parentId?: number | undefined
+    locked?: boolean
+    banned?: boolean
+    rows?: number
+    placeholder?: string | undefined
+    value?: string
+    actions?: boolean
+    preview?: boolean
+    [key: string]: any
+  }
 
-  let previewAction = true
-  export { previewAction as preview }
+  let {
+    postId,
+    parentId = undefined,
+    locked = false,
+    banned = false,
+    rows = 7,
+    placeholder = undefined,
+    value = $bindable(''),
+    actions = true,
+    preview: previewAction = true,
+    ...rest
+  }: Props = $props()
 
-  let loading = false
+  let loading = $state(false)
   let preview = false
 
   async function submit() {
@@ -70,7 +83,7 @@
     </div>
   {:else}
     <MarkdownEditor
-      {...$$restProps}
+      {...rest}
       {rows}
       placeholder={locked
         ? $t('comment.locked')
@@ -88,12 +101,12 @@
       on:focus
       previewButton={previewAction}
     >
-      <div class="flex-1" />
+      <div class="flex-1"></div>
       {#if actions}
         <Button
           size="custom"
           title={$t('common.cancel')}
-          on:click={() => dispatch('cancel', true)}
+          onclick={() => dispatch('cancel', true)}
           color="tertiary"
           class="w-8 h-8"
           rounding="xl"
@@ -101,7 +114,7 @@
           <Icon src={XMark} size="16" micro />
         </Button>
         <Button
-          on:click={submit}
+          onclick={submit}
           color="primary"
           {loading}
           disabled={locked || loading || banned}

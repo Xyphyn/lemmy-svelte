@@ -3,12 +3,12 @@
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import Pageination from '$lib/components/ui/Pageination.svelte'
   import { t } from '$lib/translations'
-  import { searchParam } from '$lib/util'
+  import { searchParam } from '$lib/util.svelte'
   import { flip } from 'svelte/animate'
   import PictrsImage from './PictrsImage.svelte'
   import { expoInOut, expoOut } from 'svelte/easing'
 
-  export let data
+  let { data = $bindable() } = $props()
 </script>
 
 <Header pageHeader>{$t('routes.profile.media.title')}</Header>
@@ -22,9 +22,9 @@
             data.images.findIndex(
               (i) =>
                 i.local_image.pictrs_delete_token ==
-                image.local_image.pictrs_delete_token
+                image.local_image.pictrs_delete_token,
             ),
-            1
+            1,
           )
         }}
       />

@@ -10,7 +10,7 @@
   import ExpandableImage, {
     showImage,
   } from '$lib/components/ui/ExpandableImage.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import type { Post } from 'lemmy-js-client'
   import PostIframe from './PostIframe.svelte'
   import { Button, Material, modal } from 'mono-svelte'
@@ -18,11 +18,21 @@
   import { ArrowDownTray, Icon } from 'svelte-hero-icons'
   import PostImage from './PostImage.svelte'
 
-  export let view: 'card' | 'cozy' | 'list' | 'compact' = 'cozy'
-  export let post: Post
-  export let type: MediaType = 'none'
-  export let opened: boolean | undefined = undefined
-  export let blur: boolean = post.nsfw && $userSettings.nsfwBlur
+  interface Props {
+    view?: 'card' | 'cozy' | 'list' | 'compact'
+    post: Post
+    type?: MediaType
+    opened?: boolean | undefined
+    blur?: boolean
+  }
+
+  let {
+    view = 'cozy',
+    post,
+    type = 'none',
+    opened = undefined,
+    blur = post.nsfw && settings.nsfwBlur,
+  }: Props = $props()
 </script>
 
 <!-- 

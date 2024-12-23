@@ -5,6 +5,13 @@
   import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { page } from '$app/stores'
+  /**
+   * @typedef {Object} Props
+   * @property {import('svelte').Snippet} [children]
+   */
+
+  /** @type {Props} */
+  let { children } = $props();
 
   const routes = [
     {
@@ -47,6 +54,6 @@
     {/each}
   </nav>
   <div class="flex-[3] max-w-full w-full min-w-0">
-    <slot />
+    {@render children?.()}
   </div>
 </div>

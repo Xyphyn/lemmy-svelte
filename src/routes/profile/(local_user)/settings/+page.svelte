@@ -1,24 +1,31 @@
 <script lang="ts">
-  import { profile, profileData, setUserID } from '$lib/auth.js'
+  import { preventDefault } from 'svelte/legacy'
+
+  import { profile, profileData, setUserID } from '$lib/auth.svelte.js'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { ImageInput, Material, removeToast, toast } from 'mono-svelte'
   import { getClient } from '$lib/lemmy.js'
   import type { SaveUserSettings } from 'lemmy-js-client'
   import { Button, Switch, TextInput } from 'mono-svelte'
-  import { uploadImage } from '$lib/util.js'
+  import { uploadImage } from '$lib/util.svelte.js'
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let inline: boolean = false
-  export let data
-
-  let formData: Omit<SaveUserSettings, 'auth'> | undefined = {
-    ...data.my_user?.local_user_view?.local_user,
-    ...data.my_user?.local_user_view?.person,
+  interface Props {
+    inline?: boolean
+    data: any
+    children?: import('svelte').Snippet
   }
 
-  let profileImage: FileList | undefined
-  let bannerImage: FileList | undefined
+  let { inline = false, data, children }: Props = $props()
+
+  let formData: Omit<SaveUserSettings, 'auth'> | undefined = $state({
+    ...data.my_user?.local_user_view?.local_user,
+    ...data.my_user?.local_user_view?.person,
+  })
+
+  let profileImage: FileList | undefined = $state()
+  let bannerImage: FileList | undefined = $state()
 
   async function save() {
     if (!formData || !$profile?.jwt) return
@@ -53,14 +60,14 @@
     loading = false
   }
 
-  let loading = false
+  let loading = $state(false)
 </script>
 
-<form class="flex flex-col gap-4 h-full" on:submit|preventDefault={save}>
+<form class="flex flex-col gap-4 h-full" onsubmit={preventDefault(save)}>
   {#if !inline}
     <Header pageHeader>{$t('routes.profile.settings')}</Header>
   {/if}
-  <slot />
+  {@render children?.()}
   {#if data.my_user?.local_user_view?.local_user && formData}
     <TextInput label={$t('form.profile.email')} bind:value={formData.email} />
     <TextInput

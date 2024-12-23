@@ -2,9 +2,9 @@
   import { isImage, isVideo } from '$lib/ui/image.js'
   import { TextInput } from 'mono-svelte'
 
-  let imageInput = ''
-  $: inputIsImage = isImage(imageInput)
-  $: inputIsVideo = isVideo(imageInput)
+  let imageInput = $state('')
+  let inputIsImage = $derived(isImage(imageInput))
+  let inputIsVideo = $derived(isVideo(imageInput))
 </script>
 
 <h1 class="font-bold text-2xl">Functions</h1>

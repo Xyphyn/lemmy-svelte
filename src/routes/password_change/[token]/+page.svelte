@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy';
+
   import { goto } from '$app/navigation'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import {
@@ -10,14 +12,18 @@
   import { t } from '$lib/translations'
   import { Button, TextInput, toast } from 'mono-svelte'
 
-  export let data: {
+  interface Props {
+    data: {
     token: string
+  };
   }
 
-  let instance = LINKED_INSTANCE_URL || $currentInstance || ''
-  let password = '',
-    password_verify = ''
-  let loading = false
+  let { data }: Props = $props();
+
+  let instance = $state(LINKED_INSTANCE_URL || $currentInstance || '')
+  let password = $state(''),
+    password_verify = $state('')
+  let loading = $state(false)
 
   async function submit() {
     loading = true
@@ -52,7 +58,7 @@
   <p>
     {$t('routes.passwordChange.description')}
   </p>
-  <form class="mt-2 flex flex-col gap-4" on:submit|preventDefault={submit}>
+  <form class="mt-2 flex flex-col gap-4" onsubmit={preventDefault(submit)}>
     {#if !LINKED_INSTANCE_URL}
       <TextInput
         bind:value={instance}

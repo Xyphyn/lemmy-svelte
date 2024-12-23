@@ -22,22 +22,30 @@
     report,
   } from '$lib/components/lemmy/moderation/moderation.js'
   import CommentModerationMenu from '$lib/components/lemmy/moderation/CommentModerationMenu.svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { deleteItem, save } from '$lib/lemmy/contentview.js'
   import { Button, Menu, MenuButton, MenuDivider } from 'mono-svelte'
   import { t } from '$lib/translations'
   import Translation from '$lib/components/translate/Translation.svelte'
   import { text } from '$lib/components/translate/translation'
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
 
-  export let comment: CommentView
-  export let replying: boolean = false
-  export let disabled = false
+  interface Props {
+    comment: CommentView
+    replying?: boolean
+    disabled?: boolean
+  }
+
+  let {
+    comment = $bindable(),
+    replying = $bindable(false),
+    disabled = false,
+  }: Props = $props()
 
   const dispatcher = createEventDispatcher<{ edit: CommentView }>()
 
   let reply = ''
-  let translating = false
+  let translating = $state(false)
 </script>
 
 {#if translating}
@@ -46,12 +54,12 @@
 
 <div
   class="flex flex-row items-center gap-0.5 h-7 w-full"
-  class:flex-row-reverse={$userSettings.posts.reverseActions}
+  class:flex-row-reverse={settings.posts.reverseActions}
 >
   <CommentVote
-    bind:upvotes={comment.counts.upvotes}
-    bind:downvotes={comment.counts.downvotes}
-    bind:vote={comment.my_vote}
+    upvotes={comment.counts.upvotes}
+    downvotes={comment.counts.downvotes}
+    vote={comment.my_vote}
     commentId={comment.comment.id}
   />
   <Button
@@ -59,7 +67,7 @@
     color="tertiary"
     rounding="pill"
     class="text-slate-700 dark:text-zinc-300"
-    on:click={() => (replying = !replying)}
+    onclick={() => (replying = !replying)}
     disabled={comment.post.locked || disabled}
   >
     <Icon src={ChatBubbleOvalLeft} size="14" micro />
@@ -69,25 +77,22 @@
     <CommentModerationMenu bind:item={comment} />
   {/if}
   <Menu placement="bottom">
-    <Button
-      slot="target"
-      title={$t('comment.actions.label')}
-      color="tertiary"
-      rounding="pill"
-      size="square-sm"
-      class="text-slate-700 dark:text-zinc-300"
-    >
-      <Icon
-        src={EllipsisHorizontal}
-        width={16}
-        height={16}
-        mini
-        slot="prefix"
-      />
-    </Button>
+    {#snippet target()}
+      <Button
+        title={$t('comment.actions.label')}
+        color="tertiary"
+        rounding="pill"
+        size="square-sm"
+        class="text-slate-700 dark:text-zinc-300"
+      >
+        {#snippet prefix()}
+          <Icon src={EllipsisHorizontal} width={16} height={16} mini />
+        {/snippet}
+      </Button>
+    {/snippet}
     <MenuDivider>{$t('comment.actions.label')}</MenuDivider>
     <MenuButton
-      on:click={() => {
+      onclick={() => {
         navigator.share?.({
           url: comment.comment.ap_id,
         }) ?? navigator.clipboard.writeText(comment.comment.ap_id)
@@ -96,27 +101,29 @@
       <Icon src={Square2Stack} mini size="16" />
       <div>{$t('comment.actions.link')}</div>
     </MenuButton>
-    {#if $userSettings.translator}
+    {#if settings.translator}
       <MenuButton
-        on:click={() => {
+        onclick={() => {
           // @ts-ignore
           text.set(comment.comment.content)
           translating = !translating
         }}
       >
-        <Icon src={Language} size="16" mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Language} size="16" mini />
+        {/snippet}
         {$t('post.actions.more.translate')}
       </MenuButton>
     {/if}
     {#if $profile?.jwt}
       {#if comment.creator.id == $profile.user?.local_user_view.person.id}
-        <MenuButton on:click={() => dispatcher('edit', comment)}>
+        <MenuButton onclick={() => dispatcher('edit', comment)}>
           <Icon src={PencilSquare} mini size="16" />
           <span>{$t('post.actions.more.edit')}</span>
         </MenuButton>
       {/if}
       <MenuButton
-        on:click={async () => {
+        onclick={async () => {
           if ($profile?.jwt)
             comment.saved = await save(comment, !comment.saved, $profile.jwt)
         }}
@@ -129,12 +136,12 @@
       {#if $profile?.user && $profile.jwt && $profile.user.local_user_view.person.id == comment.creator.id}
         <MenuButton
           color="danger-subtle"
-          on:click={async () => {
+          onclick={async () => {
             if ($profile?.jwt)
               comment.comment.deleted = await deleteItem(
                 comment,
                 !comment.comment.deleted,
-                $profile.jwt
+                $profile.jwt,
               )
           }}
         >
@@ -147,12 +154,12 @@
         </MenuButton>
       {/if}
       {#if $profile.jwt && $profile.user?.local_user_view.person.id != comment.creator.id}
-        <MenuButton on:click={() => report(comment)} color="danger-subtle">
+        <MenuButton onclick={() => report(comment)} color="danger-subtle">
           <Icon src={Flag} mini size="16" />
           <span>{$t('moderation.report')}</span>
         </MenuButton>
       {/if}
     {/if}
   </Menu>
-  <div class="flex-1 w-full" />
+  <div class="flex-1 w-full"></div>
 </div>

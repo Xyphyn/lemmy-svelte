@@ -6,7 +6,7 @@
     type MediaType,
   } from '$lib/components/lemmy/post/helpers.js'
   import { showImage } from '$lib/components/ui/ExpandableImage.svelte'
-  import { userSettings, type View } from '$lib/settings.js'
+  import { settings, type View } from '$lib/settings.svelte.js'
   import { isImage } from '$lib/ui/image'
   import type { Post } from 'lemmy-js-client'
   import { Material, Popover } from 'mono-svelte'
@@ -18,48 +18,59 @@
     ExclamationTriangle,
   } from 'svelte-hero-icons'
 
-  export let post: Post
-  export let type: MediaType = 'none'
-  export let view: View = 'cozy'
-  export let blur: boolean = post.nsfw && $userSettings.nsfwBlur
-
   const thumbnailSize = (view: View) =>
     view == 'compact' ? 'w-22 h-22 sm:w-28' : 'w-24 h-24 sm:w-32'
 
-  $: size = thumbnailSize(view)
+  interface Props {
+    post: Post
+    type?: MediaType
+    view?: View
+    blur?: boolean
+    style?: string
+    class?: string
+  }
+
+  let {
+    post,
+    type = 'none',
+    view = 'cozy',
+    blur = post.nsfw && settings.nsfwBlur,
+    style = '',
+    class: clazz = '',
+  }: Props = $props()
+
+  let size = $derived(thumbnailSize(view))
 </script>
 
 <!-- 
   @component
   Thumbnails for compact and list view posts.
 -->
-<div
-  class="{size} relative group/media {$$props.class ?? ''}"
-  style={$$props.style ?? ''}
->
+<div class="{size} relative group/media {clazz ?? ''}" {style}>
   {#if post.alt_text}
     <Popover
       openOnHover
-      placement={$userSettings.leftAlign ? 'bottom-start' : 'bottom-end'}
+      placement={settings.leftAlign ? 'bottom-start' : 'bottom-end'}
     >
-      <Material
-        slot="target"
-        padding="none"
-        rounding="full"
-        elevation="high"
-        class="w-max absolute bottom-0 left-0 py-0.5 px-1.5 m-1 font-bold"
-      >
-        ALT
-      </Material>
+      {#snippet target()}
+        <Material
+          padding="none"
+          rounding="full"
+          elevation="high"
+          class="w-max absolute bottom-0 left-0 py-0.5 px-1.5 m-1 font-bold"
+        >
+          ALT
+        </Material>
+      {/snippet}
       <div class="max-w-sm">
         {post.alt_text}
       </div>
     </Popover>
   {/if}
   <svelte:element
-    this={!$userSettings.expandImages || type != 'image' ? 'a' : 'button'}
+    this={!settings.expandImages || type != 'image' ? 'a' : 'button'}
     href={postLink(post)}
-    on:click={() => {
+    onclick={() => {
       if (type == 'image') {
         showImage(bestImageURL(post, false, -1))
       }

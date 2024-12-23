@@ -8,10 +8,16 @@
   function action(detail: any) {
     dispatcher('action', detail)
   }
+  interface Props {
+    class?: string
+    children?: import('svelte').Snippet<[any]>
+  }
+
+  let { class: clazz = '', children }: Props = $props()
 </script>
 
 <ul
-  class="divide-y divide-slate-200 dark:divide-zinc-900 flex flex-col {$$props.class}"
+  class="divide-y divide-slate-200 dark:divide-zinc-900 flex flex-col {clazz}"
 >
-  <slot {action} />
+  {@render children?.({ action })}
 </ul>

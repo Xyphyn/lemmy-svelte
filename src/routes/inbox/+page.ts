@@ -1,4 +1,4 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { publishedToDate } from '$lib/components/util/date.js'
 import { getClient } from '$lib/lemmy.js'
 import {
