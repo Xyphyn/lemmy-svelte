@@ -103,7 +103,9 @@
       showWhenEmpty={true}
       label="Community"
       class="flex-1"
-      q={$page.url.searchParams.get('community') ? 'Selected' : ''}
+      q={$page.url.searchParams.get('community')
+        ? data.filters.community ?? 'Selected'
+        : ''}
       on:select={(e) =>
         searchParam(
           $page.url,
