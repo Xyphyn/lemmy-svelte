@@ -15,6 +15,7 @@
   import { amMod, isAdmin } from './moderation'
   import { Button, Checkbox, Modal } from 'mono-svelte'
   import { t } from '$lib/translations'
+  import { parseListBlock } from '$lib/prism'
 
   export let open: boolean
   export let item: PostView | CommentView | undefined = undefined
@@ -26,11 +27,23 @@
   let loading = false
   let preset = $userSettings.moderation.presets[0]?.content ?? ''
 
+  $: rules = getRules(item?.community.description ?? '')
+
   $: removed = item
     ? isCommentView(item)
       ? item.comment.removed
       : item.post.removed
     : false
+
+  const getRules = (sidebar: string) => {
+    const parsed = parseListBlock(sidebar)
+
+    if (parsed?.name.toLowerCase().trim() == 'rules') {
+      return parsed.items
+    } else {
+      return null
+    }
+  }
 
   const getReplyReason = (reason: string, preset: string) => {
     if (!item) return `no template`
@@ -186,12 +199,26 @@
         <Post actions={false} post={item} />
       {/if}
 
-      <MarkdownEditor
-        rows={3}
-        label="Reason"
-        placeholder="Optional"
-        bind:value={reason}
-      />
+      <MarkdownEditor rows={3} bind:value={reason}>
+        <div slot="label" class="flex flex-row justify-between pb-1 items-end">
+          {$t('moderation.reason')}
+          {#if rules}
+            <Select
+              placeholder={$t('moderation.rulePreset')}
+              bind:value={reason}
+            >
+              {#each rules as rule}
+                <option value={rule.value}>
+                  {$t('moderation.ruleNumber', {
+                    // @ts-ignore
+                    ruleNumber: rule.key,
+                  })}
+                </option>
+              {/each}
+            </Select>
+          {/if}
+        </div>
+      </MarkdownEditor>
 
       {#if !removed && $profile?.user && (amMod($profile.user, item.community) || (isAdmin($profile.user) && item.community.local))}
         <Switch bind:checked={commentReason}>

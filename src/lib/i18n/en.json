@@ -269,6 +269,10 @@
             "emptyComments": {
                 "title": "No comments",
                 "description": "Start the conversation!"
+            },
+            "poll": {
+                "vote": "Vote",
+                "warning": "This will comment the following: {{content}}"
             }
         },
         "inbox": {
@@ -567,7 +571,9 @@
         "label": "Moderation",
         "labelInstanceOnly": "Moderation (Instance Only)",
         "feature": "Feature",
-        "unfeature": "Unfeature"
+        "unfeature": "Unfeature",
+        "rulePreset": "Rule presets",
+        "ruleNumber": "Rule {{ruleNumber}}"
     },
     "common": {
         "back": "Back",

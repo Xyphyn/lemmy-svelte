@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { parseListBlock } from '$lib/prism/index.js'
   export let data
 </script>
 

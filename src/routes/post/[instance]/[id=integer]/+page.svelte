@@ -20,11 +20,12 @@
     BookmarkSlash,
     ArrowUp,
     ArrowDown,
+    CheckCircle,
   } from 'svelte-hero-icons'
   import PostMeta, {
     parseTags,
   } from '$lib/components/lemmy/post/PostMeta.svelte'
-  import { Select, removeToast, toast } from 'mono-svelte'
+  import { Select, action, modal, removeToast, toast } from 'mono-svelte'
   import type { CommentSortType } from 'lemmy-js-client'
   import { profile } from '$lib/auth.js'
   import { instance } from '$lib/instance.js'
@@ -45,6 +46,8 @@
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import CommentListVirtualizer from '$lib/components/lemmy/comment/CommentListVirtualizer.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
+  import { parseListBlock } from '$lib/prism/index.js'
+  import { type CommentView } from 'lemmy-js-client'
 
   export let data
 
@@ -169,6 +172,75 @@
 
   $: remoteView =
     $page.params.instance?.toLowerCase() != $instance.toLowerCase()
+
+  let poll = parseListBlock(data.post.post_view.post.body ?? '', '=')
+
+  async function vote(
+    comments: CommentView[],
+    key: string,
+    confirm: boolean = false
+  ) {
+    if (!$profile?.user) {
+      toast({ content: 'Invalid user', type: 'error' })
+      return
+    }
+
+    if (!confirm) {
+      return modal({
+        title: $t('routes.post.poll.vote'),
+        body: $t('routes.post.poll.warning', {
+          // @ts-ignore
+          content: key,
+        }),
+        actions: [
+          action({
+            close: true,
+            content: $t('common.cancel'),
+          }),
+          action({
+            type: 'primary',
+            content: $t('form.submit'),
+            action: () => vote(comments, key, true),
+            close: true,
+          }),
+        ],
+      })
+    }
+
+    if (
+      comments.find(
+        (i) => i.comment.creator_id == $profile?.user?.local_user_view.person.id
+      )
+    ) {
+      toast({ content: 'You already voted here', type: 'error' })
+      return
+    }
+
+    const response = await client().createComment({
+      content: key,
+      post_id: data.post.post_view.post.id,
+    })
+
+    reloadComments()
+  }
+
+  function aggregateVotes(comments: CommentView[]): Record<string, number> {
+    if (!poll) return {}
+    let results: any = {
+      total: comments.length,
+      self: comments.find(
+        (i) => i.comment.creator_id == $profile?.user?.local_user_view.person.id
+      )?.comment.content,
+    }
+
+    poll.items.forEach((i) => {
+      results[i.key] = comments.filter((c) =>
+        c.comment.content.startsWith(i.key)
+      ).length
+    })
+
+    return results
+  }
 </script>
 
 <svelte:head>
@@ -287,6 +359,40 @@
   {#if data.post.post_view.post.body}
     <div class="text-base text-slate-800 dark:text-zinc-300 leading-[1.5]">
       <Markdown source={data.post.post_view.post.body} />
+    </div>
+  {/if}
+  {#if poll?.name == 'poll' && poll.items.length > 0}
+    <div class="flex flex-col gap-2">
+      {#await data.comments then comments}
+        {@const results = aggregateVotes(comments.comments)}
+        {#each poll.items as option}
+          <Button
+            alignment="left"
+            size="lg"
+            color="ghost"
+            class="!text-inherit dark:!text-inherit relative z-10 w-full"
+            on:click={() => vote(comments.comments, option.key)}
+          >
+            <div
+              class="absolute left-0 rounded-xl h-full -z-10 bg-primary-900/10 dark:bg-primary-100/10"
+              style="width:
+          {((results?.[option.key] ?? 0) / results.total) * 100}%;"
+            />
+            <div class="font-bold text-primary-900 dark:text-primary-100">
+              {#if results.self?.toString()?.startsWith(option.key)}
+                <Icon src={CheckCircle} micro size="16" />
+              {:else}
+                {option.key}
+              {/if}
+            </div>
+
+            <div>{option.value}</div>
+            <div class="self-end ml-auto">
+              {Math.floor(((results[option.key] ?? 0) / results.total) * 100)}%
+            </div>
+          </Button>
+        {/each}
+      {/await}
     </div>
   {/if}
   <div class="w-full relative">
