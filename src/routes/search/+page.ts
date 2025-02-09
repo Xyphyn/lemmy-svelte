@@ -50,12 +50,17 @@ export async function load({ url, fetch }) {
       )
     }
 
+    const communityName = (posts[0] || comments[0] || communities[0]).community.title
+
     return {
       type: type,
       sort: sort,
       page: page,
       query: query,
       results: everything,
+      filters: {
+        community: community ? communityName : undefined,
+      },
       streamed: {
         object: get(profile)?.jwt
           ? getClient(undefined, fetch).resolveObject({
