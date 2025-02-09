@@ -12,14 +12,17 @@
 {#if profile}
   <div style="width: {size}px; height: {size}px;">
     {#if profile.avatar && !profile.color}
-      <img
-        src="{profile.avatar}?thumbnail=32&format=webp"
-        alt={profile.username}
-        width={size}
-        height={size}
-        class="flex-shrink-0 rounded-full ring-slate-800/50 dark:ring-zinc-200/50"
+      <div
+        style={`width: ${size}px; height: ${size}px`}
+        class="rounded-full overflow-hidden ring-slate-800/50 dark:ring-zinc-200/50"
         class:ring-2={selected}
-      />
+      >
+        <img
+          src="{profile.avatar}?thumbnail=32&format=webp"
+          alt={profile.username}
+          class="w-full h-full object-cover"
+        />
+      </div>
     {:else}
       <Icon
         src={UserCircle}
