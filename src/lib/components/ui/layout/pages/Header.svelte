@@ -1,6 +1,5 @@
 <script lang="ts">
   import { settings } from '$lib/settings.svelte'
-  import { contentPadding } from '../Shell.svelte'
 
   interface Props {
     pageHeader?: boolean
@@ -24,14 +23,11 @@
   {pageHeader
     ? `w-[calc(100%+2rem)] sm:w-[calc(100%+3rem)]
   bg-slate-50 dark:bg-zinc-950 -m-4 sm:-m-6 mb-0 sm:mb-0 sm:p-6 p-4
-   border-b border-slate-200 dark:border-zinc-800`
+   border-b border-slate-200 dark:border-zinc-800 margin`
     : ''}
   
   "
-  style="{pageHeader
-    ? `margin-top: min(-12rem, calc(-1 * calc(${$contentPadding.top}px))); padding-top: max(12rem, calc(${$contentPadding.top}px));`
-    : ''} {style};
-"
+  {style}
 >
   <h1
     class="text-3xl font-medium flex gap-2 w-full
@@ -45,3 +41,17 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .margin {
+    margin-top: -12rem;
+    padding-top: 12rem;
+  }
+
+  @media screen and (min-width: 1024px) {
+    .margin {
+      margin-top: -4rem;
+      padding-top: 4rem;
+    }
+  }
+</style>

@@ -46,7 +46,6 @@
   import { Popover } from 'mono-svelte'
   import { t } from '$lib/translations.js'
   import { resumables } from '$lib/lemmy/item.js'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import CommentListVirtualizer from '$lib/components/lemmy/comment/CommentListVirtualizer.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
@@ -146,7 +145,7 @@
       if (res.post) {
         removeToast(id)
         goto(`/post/${instance.data}/${res.post.post.id}`, {}).then(() =>
-          removeToast(id)
+          removeToast(id),
         )
       }
     } catch (err) {
@@ -176,7 +175,7 @@
   let commenting = $state(false)
 
   let remoteView = $derived(
-    page.params.instance?.toLowerCase() != instance.data?.toLowerCase()
+    page.params.instance?.toLowerCase() != instance.data?.toLowerCase(),
   )
 </script>
 
@@ -342,8 +341,7 @@
   <div
     class="sticky mx-auto z-50 max-w-lg w-full min-w-0 flex items-center overflow-auto gap-1
     bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-xl border border-slate-200/50 dark:border-zinc-800/50
-    p-1 rounded-full px-2.5 justify-between"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
+    p-1 rounded-full px-2.5 justify-between top-6 lg:top-22"
   >
     <p class="font-medium text-sm flex items-center gap-2">
       <Icon src={InformationCircle} mini size="20" />

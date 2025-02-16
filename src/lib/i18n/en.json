@@ -698,6 +698,10 @@
             "pins": {
                 "title": "Pins",
                 "description": "Click a pin to send it to the top of the sidebar. Right click a pinned item to remove it."
+            },
+            "autoHide": {
+                "title": "Auto hide dock",
+                "description": "Hides the dock on mobile when you scroll down, re-appears when you scroll up."
             }
         },
         "app": {

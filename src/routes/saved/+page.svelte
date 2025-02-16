@@ -14,7 +14,6 @@
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { Select } from 'mono-svelte'
   import {
     Icon,
@@ -86,10 +85,7 @@
     {/each}
   {/if}
 </div>
-<div
-  class="sticky z-30 mx-auto max-w-full"
-  style="bottom: max(1.5rem, {$contentPadding.bottom}px);"
->
+<div class="sticky z-30 mx-auto max-w-full bottom-22 lg:bottom-6">
   <Tabs routes={[]} class="mx-auto">
     <Pageination href={(page) => `?page=${page}`} page={data.page} />
   </Tabs>

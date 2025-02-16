@@ -1,9 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { page } from '$app/state'
-  import MultiSelect from '$lib/components/input/Switch.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { t } from '$lib/translations.js'
   import { fullCommunityName } from '$lib/util.svelte.js'
   import type { PageData } from './$types.js'
@@ -25,8 +21,7 @@
 
 <div class="flex flex-col gap-4 h-full">
   <div
-    class="sticky mx-auto z-50 max-w-full min-w-0 flex items-center gap-2"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
+    class="sticky mx-auto z-50 max-w-full min-w-0 flex items-center gap-2 top-6 lg:top-22"
   >
     <Tabs
       routes={[

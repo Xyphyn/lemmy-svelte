@@ -50,7 +50,7 @@
     }}
     href="/"
     label={$t('nav.home')}
-    class="ml-2 logo"
+    class="ml-2 lg:ml-2 logo border-0 lg:rounded-full lg:w-10 lg:h-10 lg:!p-0"
     adaptive={false}
   >
     {#snippet customIcon()}

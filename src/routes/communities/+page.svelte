@@ -26,7 +26,6 @@
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
   import { fly } from 'svelte/transition'
   import { backOut, expoOut } from 'svelte/easing'
@@ -64,10 +63,7 @@
 </Header>
 
 <form method="get" action="/communities" class="contents" bind:this={form}>
-  <div
-    class="mt-4 mb-0 sticky z-30"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
-  >
+  <div class="mt-4 mb-0 sticky z-30 top-6 lg:top-22">
     <Tabs routes={[]} class="p-2 dark:bg-zinc-925/70 shadow-md shadow-black/5">
       <div class="flex gap-2 flex-row items-center w-full text-base h-10">
         <TextInput
@@ -198,10 +194,7 @@
   </ul>
 {/if}
 {#if communities.length > 0}
-  <div
-    class="sticky z-30 mx-auto max-w-full"
-    style="bottom: max(1.5rem, {$contentPadding.bottom}px);"
-  >
+  <div class="sticky z-30 mx-auto max-w-full bottom-22 lg:bottom-6">
     <Tabs routes={[]} class="mx-auto">
       <Pageination
         page={Number(page.url.searchParams.get('page')) || 1}

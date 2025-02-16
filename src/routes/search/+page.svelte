@@ -38,7 +38,6 @@
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { goto } from '$app/navigation'
   import Option from 'mono-svelte/forms/select/Option.svelte'
   import Skeleton from '$lib/components/ui/generic/Skeleton.svelte'
@@ -70,10 +69,7 @@
   {$t('routes.search.title')}
 </Header>
 <form method="get" action="/search" class="contents" bind:this={form}>
-  <div
-    class="mt-4 mb-0 sticky z-30"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
-  >
+  <div class="mt-4 mb-0 sticky z-30 top-6 lg:top-22">
     <Tabs routes={[]} class="p-2 dark:bg-zinc-925/70">
       <div class="flex gap-2 flex-row items-center w-full text-base h-10">
         <TextInput

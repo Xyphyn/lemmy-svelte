@@ -4,7 +4,6 @@
 
   import MultiSelect from '$lib/components/input/Switch.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { site } from '$lib/lemmy.svelte'
   import { t } from '$lib/translations'
   import { feature } from '$lib/version'
@@ -31,8 +30,7 @@
 
 <div class="flex flex-col gap-4 h-full z-0">
   <div
-    class="sticky mx-auto z-50 max-w-full min-w-0 flex items-center gap-2"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
+    class="sticky mx-auto z-50 max-w-full min-w-0 flex items-center gap-2 top-6 lg:top-22"
   >
     <Tabs
       class="overflow-auto"

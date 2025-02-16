@@ -1,100 +1,8 @@
-<script lang="ts" module>
-  import { innerWidth } from 'svelte/reactivity/window'
-
-  const calculateDockProperties = (
-    settings: {
-      top: boolean | null
-      noGap: boolean | null
-    },
-    screenWidth: number,
-  ): {
-    noGap: boolean
-    top: boolean
-  } => {
-    let panel = false
-    let top = false
-
-    if (screenWidth >= 1000) {
-      panel = true
-      top = true
-    } else if (screenWidth > 800) {
-      panel = true
-      top = false
-    } else if (screenWidth > 600) {
-      panel = false
-      top = false
-    }
-
-    panel = settings.noGap ?? panel
-    top = settings.top ?? top
-
-    return {
-      noGap: panel,
-      top: top,
-    }
-  }
-
-  export const calculatePadding = (
-    panel: boolean,
-    top: boolean,
-    content: boolean,
-  ): {
-    top: number
-    bottom: number
-    class: string
-  } => {
-    if (panel) {
-      if (top) {
-        if (content) return { top: 80, class: '!pt-20', bottom: 0 }
-        else
-          return {
-            top: 64,
-            class: 'top-16 !max-h-[calc(100vh-4rem)]',
-            bottom: 0,
-          }
-      } else return { top: 0, class: '!pb-20', bottom: 80 }
-    } else {
-      if (!content) return { top: 0, class: '', bottom: 0 }
-
-      if (top) return { top: 96, class: '!pt-24', bottom: 0 }
-      else return { top: 0, class: '!pb-24', bottom: 96 }
-    }
-
-    return { top: 0, class: ' failed-to-calculate', bottom: 0 }
-  }
-
-  export let screenWidth = writable(1000)
-
-  let dockProps = $derived(
-    calculateDockProperties(settings.dock, innerWidth.current ?? 1000),
-  )
-  let contentPadding = $derived(
-    calculatePadding(dockProps.noGap, dockProps.top, true),
-  )
-
-  let contentPaddingStore = writable<{
-    top: number
-    bottom: number
-    class: string
-  }>(contentPadding)
-  let dockPropsStore = writable<{
-    noGap: boolean
-    top: boolean
-  }>(dockProps)
-
-  let sidePadding = $derived(
-    calculatePadding(dockProps.noGap, dockProps.top, false),
-  )
-  let topPanel = $derived(dockProps.noGap && dockProps.top)
-
-  export { contentPaddingStore as contentPadding, dockPropsStore as dockProps }
-</script>
-
 <script lang="ts">
   import { settings } from '$lib/settings.svelte.js'
   import { theme } from '$lib/ui/colors.svelte'
-  import { writable, type Readable, type Writable } from 'svelte/store'
-  import type { ClassValue } from 'svelte/elements'
+  import type { ClassValue, UIEventHandler } from 'svelte/elements'
+  import { scrollY } from 'svelte/reactivity/window'
 
   interface Props {
     route?: { id: string | null } | undefined
@@ -118,11 +26,22 @@
     ...rest
   }: Props = $props()
 
-  $effect(() => {
-    contentPaddingStore.set(contentPadding)
-    dockPropsStore.set(dockProps)
-  })
+  let previousTop = 0
+  const onscroll: UIEventHandler<Window> = (e) => {
+    if (!settings.dock.autoHide) {
+      dockVisible = true
+      return
+    }
+
+    dockVisible = (scrollY?.current ?? 0) <= previousTop
+
+    previousTop = scrollY?.current ?? 0
+  }
+
+  let dockVisible = $state(true)
 </script>
+
+<svelte:window {onscroll} />
 
 <div
   {...rest}
@@ -131,34 +50,18 @@
 >
   {@render children?.()}
   <div
-    class="
-    {dockProps.noGap ? '' : 'p-4 max-w-3xl left-1/2 -translate-x-1/2'}
-    {dockProps.top ? 'top-0' : 'bottom-0'}
-    {topPanel ? 'fixed top-0' : 'fixed'}
+    class="fixed lg:sticky bottom-0 {dockVisible
+      ? ''
+      : 'max-lg:-bottom-24'}  lg:top-0
+    max-w-3xl p-4 left-1/2 -translate-x-1/2 lg:max-w-full lg:p-0 lg:left-0 lg:translate-x-0
     w-full z-50 pointer-events-none"
     style="grid-area: navbar;
-    transition-property: padding, top, bottom;
-    transition-duration: 250ms;
-    transition-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);"
+    transition: bottom .4s cubic-bezier(0.075, 0.82, 0.165, 1);"
   >
     {@render navbar?.({
-      class: `
-      ${
-        dockProps.noGap
-          ? dockProps.top
-            ? 'border-b shadow-none rounded-none'
-            : 'border-t rounded-none'
-          : 'border rounded-full'
-      }
-       
-       dark:bg-transparent transition-colors duration-500
-      pointer-events-auto backdrop-blur-xl ${
-        topPanel
-          ? 'bg-slate-50/50 dark:bg-zinc-950/90 border-slate-100 dark:border-zinc-900'
-          : `border-slate-200 dark:border-zinc-800 shadow-2xl
-        bg-white/50 dark:bg-zinc-950/70`
-      }`,
-      style: 'transition: border-radius 250ms;',
+      class: `bg-slate-50/50 dark:bg-zinc-950/90 border-slate-100 dark:border-zinc-900
+      pointer-events-auto backdrop-blur-xl border lg:border-t-0 lg:border-x-0
+      rounded-full lg:rounded-none`,
     })}
   </div>
   <div
@@ -168,17 +71,16 @@
   >
     {@render sidebar?.({
       class: `hidden md:flex sticky top-0 left-0 h-max bg-slate-50 dark:bg-zinc-950
-      z-40
-      ${sidePadding.class}`,
+      z-40 lg:top-16`,
       style: 'grid-area: sidebar; width: 100% !important;',
     })}
     {@render main?.({
-      class: `w-full bg-slate-25 dark:bg-zinc-925 justify-self-center shadow-sm z-0
-      ${contentPadding.class} main`,
+      class: `w-full bg-slate-25 dark:bg-zinc-925 justify-self-center shadow-sm z-0 main !pb-22 lg:!pb-0`,
       style: 'grid-area: main',
     })}
     {@render suffix?.({
-      class: `max-xl:hidden w-full sticky top-0 left-0 max-h-screen bg-slate-50 dark:bg-zinc-950 z-40 ${sidePadding.class}`,
+      class: `max-xl:hidden w-full sticky top-0 left-0 max-h-screen bg-slate-50 dark:bg-zinc-950
+      z-40 lg:top-16`,
       style: 'grid-area: suffix;',
     })}
   </div>

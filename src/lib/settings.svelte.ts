@@ -84,9 +84,8 @@ interface Settings {
     piped: string | undefined
   }
   dock: {
-    noGap: boolean | null
-    top: boolean | null
     paletteHotkey: string
+    autoHide: boolean
   }
   posts: {
     deduplicateEmbed: boolean
@@ -164,9 +163,8 @@ export const defaultSettings: Settings = {
     piped: undefined,
   },
   dock: {
-    noGap: toBool(env.PUBLIC_DOCK_PANEL) ?? null,
-    top: toBool(env.PUBLIC_DOCK_TOP) ?? null,
     paletteHotkey: '/',
+    autoHide: true,
   },
   posts: {
     deduplicateEmbed: toBool(env.PUBLIC_DEDUPLICATE_EMBED) ?? true,

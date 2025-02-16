@@ -174,10 +174,6 @@
     <Icon src={ArrowTopRightOnSquare} size="14" micro />
     {$t('settings.app.title')}
   </Button>
-  <Button href="#nav" size="sm" class="text-xs" rounding="pill">
-    <Icon src={ArrowTopRightOnSquare} size="14" micro />
-    {$t('settings.navigation.title')}
-  </Button>
   <Button href="#embeds" size="sm" class="text-xs" rounding="pill">
     <Icon src={ArrowTopRightOnSquare} size="14" micro />
     {$t('settings.embeds.title')}
@@ -393,6 +389,12 @@
       description={$t('settings.app.limitLayoutWidth.description')}
     />
     <ToggleSetting
+      supportedPlatforms={{ desktop: false, tablet: false, mobile: true }}
+      bind:checked={settings.dock.autoHide}
+      title={$t('settings.navigation.autoHide.title')}
+      description={$t('settings.navigation.autoHide.description')}
+    />
+    <ToggleSetting
       bind:checked={settings.openLinksInNewTab}
       title={$t('settings.app.postsInNewTab.title')}
       description={$t('settings.app.postsInNewTab.description')}
@@ -469,46 +471,6 @@
         </div>
       </Setting>
     </div>
-  </Section>
-  <Section id="nav" title={$t('settings.navigation.title')}>
-    <Setting>
-      {#snippet title()}
-        <span>{$t('settings.navigation.dockPos.title')}</span>
-      {/snippet}
-      {#snippet description()}
-        <span>
-          {$t('settings.navigation.dockPos.description')}
-        </span>
-      {/snippet}
-      <MultiSelect
-        options={[true, false, null]}
-        optionNames={[
-          $t('settings.navigation.dockPos.top'),
-          $t('settings.navigation.dockPos.bottom'),
-          $t('settings.navigation.dockPos.adaptive'),
-        ]}
-        bind:selected={settings.dock.top}
-      />
-    </Setting>
-    <Setting>
-      {#snippet title()}
-        <span>{$t('settings.navigation.panel.title')}</span>
-      {/snippet}
-      {#snippet description()}
-        <span>
-          {$t('settings.navigation.panel.description')}
-        </span>
-      {/snippet}
-      <MultiSelect
-        options={[true, false, null]}
-        optionNames={[
-          $t('settings.navigation.panel.on'),
-          $t('settings.navigation.panel.off'),
-          $t('settings.navigation.panel.adaptive'),
-        ]}
-        bind:selected={settings.dock.noGap}
-      />
-    </Setting>
   </Section>
 
   <Section id="embeds" title={$t('settings.embeds.title')}>

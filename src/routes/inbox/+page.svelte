@@ -22,7 +22,6 @@
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { t } from '$lib/translations'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
-  import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { expoOut } from 'svelte/easing'
 
   let { data } = $props()
@@ -82,8 +81,7 @@
 <div class=" gap-2">
   <div
     class="mt-4 mb-0 sticky z-30 mx-auto max-w-full flex gap-2 md:flex-row flex-col
-items-center px-2 w-max"
-    style="top: max(1.5rem, {$contentPadding.top}px);"
+items-center px-2 w-max top-6 lg:top-22"
   >
     <Tabs
       routes={[
@@ -195,8 +193,7 @@ items-center px-2 w-max"
   {/if}
   {#if !(data.page == 1 && (data?.data?.length ?? 0) == 0)}
     <div
-      class="sticky z-30 mx-auto max-w-full self-end mt-auto"
-      style="bottom: max(1.5rem, {$contentPadding.bottom}px);"
+      class="sticky z-30 mx-auto max-w-full self-end mt-auto bottom-22 lg:bottom-6"
     >
       <Tabs routes={[]} class="mx-auto">
         <Pageination

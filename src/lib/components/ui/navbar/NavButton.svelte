@@ -1,8 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state'
-  import { Button } from 'mono-svelte'
+  import { Button, buttonColor } from 'mono-svelte'
   import { Icon, type IconSource } from 'svelte-hero-icons'
-  import { dockProps } from '../layout/Shell.svelte'
   import type { ButtonProps } from 'mono-svelte/button/Button.svelte'
 
   interface Props extends ButtonProps {
@@ -19,8 +18,8 @@
 
   let {
     label,
-    icon = undefined,
-    href = undefined,
+    icon,
+    href,
     adaptive = true,
     isSelectedFilter = (path) => href != undefined && path == href,
     class: clazz = '',
@@ -30,35 +29,38 @@
   }: Props = $props()
 
   let isSelected = $derived(isSelectedFilter(page.url.pathname))
-  let isPanel = $derived(adaptive ? $dockProps?.noGap : false)
 </script>
 
 <Button
-  color={isPanel ? 'secondary' : 'tertiary'}
+  color="none"
   {...rest}
-  class="rounded-full w-10 h-10 flex-shrink-0 {adaptive
-    ? '@3xl:h-8 @3xl:px-3 @3xl:rounded-[10px] @3xl:w-auto'
-    : ''} {isSelected
-    ? 'bg-slate-200 dark:bg-zinc-900 text-primary-900 dark:!text-primary-100'
-    : ''} {clazz}"
+  class={[
+    'flex-shrink-0 rounded-full w-10 h-10 lg:w-max lg:h-8 lg:px-3 lg:rounded-xl',
+    isSelected &&
+      'bg-slate-200 dark:bg-zinc-900 text-primary-900 dark:!text-primary-100',
+    !rest.color && buttonColor.tertiary,
+    !rest.color &&
+      'lg:bg-white lg:dark:bg-zinc-900 border lg:border-slate-200 lg:border-b-slate-300 lg:dark:border-zinc-800 lg:dark:border-t-zinc-700/50 lg:hover:bg-slate-100 lg:hover:dark:bg-zinc-800 lg:active:bg-slate-200 lg:active:dark:bg-zinc-950',
+    clazz,
+  ]}
   size="custom"
+  rounding="none"
   {href}
-  rounding="pill"
   title={label}
   style="transition-property: background-color, filter;"
 >
   {#snippet prefix()}
     {#if icon}
-      <Icon
-        src={icon}
-        micro={isPanel}
-        solid={!isPanel && isSelected}
-        size={isPanel ? '16' : '18'}
-      />
+      <div class="lg:hidden">
+        <Icon src={icon} size="18" />
+      </div>
+      <div class="max-lg:hidden">
+        <Icon src={icon} micro solid={isSelected} size="16" />
+      </div>
     {:else}
-      {@render customIcon?.({ size: isPanel ? 16 : 18, isSelected })}
+      {@render customIcon?.({ size: 16, isSelected })}
     {/if}
   {/snippet}
-  <span class="hidden {adaptive ? '@3xl:block' : ''}">{label}</span>
+  <span class="hidden {adaptive ? 'lg:block' : ''}">{label}</span>
   {@render children?.()}
 </Button>

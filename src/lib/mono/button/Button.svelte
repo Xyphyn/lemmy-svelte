@@ -121,7 +121,7 @@
     animations?: any
     loaderWidth?: number | undefined
     href?: string | undefined
-    class?: string
+    class?: ClassValue
     prefix?: Snippet
     children?: Snippet
     suffix?: Snippet
@@ -133,7 +133,7 @@
 </script>
 
 <script lang="ts">
-  import type { HTMLButtonAttributes } from 'svelte/elements'
+  import type { ClassValue, HTMLButtonAttributes } from 'svelte/elements'
 
   import Spinner from '../loader/Spinner.svelte'
   import type { Snippet } from 'svelte'
@@ -167,19 +167,19 @@
   role={href ? 'link' : 'button'}
   {href}
   {...rest}
-  class="
-      {loading ? buttonColor.secondary : buttonColor[color]}
-      {buttonSize[size]}
-      {buttonRounding[rounding][roundingSide]}
-			{buttonShadow[shadow]}
-      text-sm transition-all font-medium cursor-pointer duration-75
-      disabled:opacity-50 disabled:pointer-events-none
-      {alignment == 'center'
-    ? 'origin-center'
-    : alignment == 'left'
-      ? 'origin-left'
-      : 'origin-right'}
-      {clazz}"
+  class={[
+    loading ? buttonColor.secondary : buttonColor[color],
+    buttonSize[size],
+    buttonRounding[rounding][roundingSide],
+    buttonShadow[shadow],
+    'text-sm transition-all font-medium cursor-pointer duration-75 disabled:opacity-50 disabled:pointer-events-none',
+    alignment == 'center'
+      ? 'origin-center'
+      : alignment == 'left'
+        ? 'origin-left'
+        : 'origin-right',
+    clazz,
+  ]}
   type={submit ? 'submit' : 'button'}
 >
   <div
