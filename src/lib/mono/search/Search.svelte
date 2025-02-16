@@ -1,35 +1,52 @@
-<script lang="ts">
+<script lang="ts" module>
+  interface Props<T> extends Omit<TextInputProps, 'onselect' | 'children'> {
+    query?: string
+    selected?: T | undefined
+    search: (query: string) => Promise<T[]>
+    extractName: (item: T) => string
+    select?: any
+    input?: import('svelte').Snippet
+    noresults?: import('svelte').Snippet
+    children?: import('svelte').Snippet<[any]>
+    onselect?: (value: T | undefined) => void
+    oninput?: TextInputProps['oninput']
+  }
+
+  export type { Props as SearchProps }
+</script>
+
+<script lang="ts" generics="T">
+  import type { TextInputProps } from 'mono-svelte/forms/TextInput.svelte'
   import { Menu, TextInput, Spinner, MenuButton } from '../index.js'
   import { debounce } from '../util/time.js'
   import { createEventDispatcher } from 'svelte'
   import { Icon, MagnifyingGlass } from 'svelte-hero-icons'
 
-  export let query: string = ''
-
-  type T = $$Generic
-  let items: T[] = []
-
-  export let selected: T | undefined = undefined
-
-  export let search: (query: string) => Promise<T[]>
-  export let extractName: (item: T) => string
+  let items: T[] = $state([])
 
   /**
    * This is here so that the menu doesn't open as soon as it's mounted.
    */
-  let openMenu = false
-  let searching = false
+  let openMenu = $state(false)
+  let searching = $state(false)
 
-  const dispatcher = createEventDispatcher<{
-    input: Event
-    select: T | undefined
-  }>()
-
-  export let select = (item: T) => {
-    selected = item
-    query = extractName(item)
-    dispatcher('select', item)
-  }
+  let {
+    query = $bindable(''),
+    selected = $bindable(undefined),
+    search,
+    extractName,
+    select = (item: T) => {
+      selected = item
+      query = extractName(item)
+      onselect?.(item)
+    },
+    input,
+    noresults,
+    children,
+    onselect,
+    oninput,
+    ...rest
+  }: Props<T> = $props()
 
   const debounceFunc = debounce(async () => {
     searching = true
@@ -41,45 +58,52 @@
 
 <div class="relative">
   <Menu bind:open={openMenu}>
-    <slot name="input" slot="target">
-      <TextInput
-        bind:value={query}
-        on:input={(e) => {
-          searching = true
-          openMenu = true
-          dispatcher('input', e)
-          debounceFunc()
-        }}
-        on:focus={(e) => {
-          searching = true
-          openMenu = true
-          dispatcher('input', e)
-          debounceFunc()
-        }}
-        {...$$restProps}
-        inlineAffixes
-        slot="target"
-      >
-        <div slot="prefix" class="h-5 flex items-center">
-          <Icon src={MagnifyingGlass} mini size="16" />
-        </div>
-      </TextInput>
-    </slot>
+    {#snippet target()}
+      {#if input}{@render input()}{:else}
+        <TextInput
+          bind:value={query}
+          oninput={(e) => {
+            searching = true
+            openMenu = true
+            oninput?.(e)
+            debounceFunc()
+          }}
+          onfocus={(e) => {
+            searching = true
+            openMenu = true
+            oninput?.(e)
+            debounceFunc()
+          }}
+          {...rest}
+          inlineAffixes
+        >
+          {#snippet prefix()}
+            <div class="h-5 flex items-center">
+              <Icon src={MagnifyingGlass} mini size="16" />
+            </div>
+          {/snippet}
+        </TextInput>
+      {/if}
+    {/snippet}
     {#if searching}
       <div class="w-full h-24 grid place-items-center">
         <Spinner width={24} />
       </div>
     {:else if items.length == 0}
       <div class="text-center h-24 grid place-items-center">
-        <slot name="noresults">No results found.</slot>
+        {#if noresults}{@render noresults()}{:else}No results found.{/if}
       </div>
     {:else}
       {#each items as item}
-        <slot {extractName} {item} {dispatcher} {select}>
-          <MenuButton on:click={() => select(item)}>
+        {#if children}{@render children({
+            extractName,
+            item,
+            select,
+          })}{:else}
+          <MenuButton onclick={() => select(item)}>
             {extractName(item)}
           </MenuButton>
-        </slot>
+        {/if}
       {/each}
     {/if}
   </Menu>

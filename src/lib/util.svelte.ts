@@ -1,18 +1,19 @@
 import { goto } from '$app/navigation'
 import { toast } from 'mono-svelte'
-import { userSettings } from '$lib/settings.js'
+import { settings } from '$lib/settings.svelte'
 import { get } from 'svelte/store'
 import type { SubscribedType } from 'lemmy-js-client'
-import { page } from '$app/stores'
+import { page } from '$app/state'
 import { feature } from '$lib/version.js'
-import { client } from '$lib/lemmy.js'
-import { site } from './lemmy'
+import { client } from '$lib/lemmy.svelte.js'
+import { site } from './lemmy.svelte'
+import { t } from './translations'
 
 // Despite the name, this will round up
 // Example: findClosestNumber([8, 16, 32, 64, 128], 76) will return 128
 export const findClosestNumber = (numbers: number[], target: number): number =>
   numbers.reduce((prev, curr) =>
-    curr >= target && (prev < target || curr < prev) ? curr : prev
+    curr >= target && (prev < target || curr < prev) ? curr : prev,
   )
 
 export const searchParam = (
@@ -32,39 +33,45 @@ export const fullCommunityName = (name: string, actorId: string) =>
   `${name}@${new URL(actorId).hostname}`
 
 export const placeholders = {
-  url: ['https://www.youtube.com/watch?v=dQw4w9WgXcQ'],
+  url: ['https://example.com'],
   post: [
-    'Is starting nuclear warfare illegal?',
-    "AITA for making somebody's day?",
-    'BREAKING NEWS: Police break into gun shop, find weapons',
-    'How do I make sure my pet rock stays alive?',
-    'My cat just invented a time machine, what do I do?',
-    'Unpopular opinion: world peace would be beneficial to humanity',
-    'LPT: The smaller weights are easier to lift than the bigger weights in a gym',
-    'ELI5: What is 4 + 8?',
+    'Does anybody read these placeholders?',
+    'Top 10 reasons why a meteor would help Earth',
+    'Title text',
+    'I took a picture of something idk',
   ],
+  body: ['bottom text', 'body text', 'body text'],
   comment: [
     'what?',
     'new response just dropped',
-    "i did not read this post at all and i'm about to give my opinion on it.",
     'this comment placeholder is very important dont forget',
-    'huh. i did not understand any of that.',
     'existential crisis in progress',
     'hello user i am a sentient placeholder. please dont type anything or i disappear forever. thanks',
   ],
-  get: (type: 'url' | 'post' | 'comment') => {
-    return get(userSettings)?.randomPlaceholders
-      ? placeholders[type][
-          Math.floor(Math.random() * placeholders[type].length)
-        ]
-      : ''
+  get: (type: 'url' | 'post' | 'body' | 'comment') => {
+    if (settings.randomPlaceholders) {
+      return placeholders[type][
+        Math.floor(Math.random() * placeholders[type].length)
+      ]
+    }
+
+    switch (type) {
+      case 'post':
+        return t.get('placeholders.title')
+      case 'body':
+        return t.get('placeholders.body')
+      case 'comment':
+        return t.get('placeholders.comments')
+      case 'url':
+        return 'https://example.com'
+    }
   },
 }
 
 export function moveItem<T>(
   array: T[],
   currentIndex: number,
-  newIndex: number
+  newIndex: number,
 ): T[] {
   if (
     currentIndex < 0 ||
@@ -110,41 +117,17 @@ export const DOMAIN_REGEX_FORMS =
 export const isSubscribed = (subscribed: SubscribedType) =>
   subscribed == 'Pending' || subscribed == 'Subscribed'
 
-export const routes = {
-  '/': 'Frontpage',
-  get '/post/[instance]/[id=integer]'() {
-    return get(page)?.data?.post?.post_view?.post?.name
-  },
-  '/settings': 'Settings',
-  '/communities': 'Communities',
-  '/search': 'Search',
-  '/moderation': 'Moderation',
-  '/create/post': 'Create post',
-  '/create/community': 'Create community',
-  get '/c/[name]'() {
-    return get(page)?.data?.community?.community_view?.community?.title
-  },
-  '/accounts': 'Accounts',
-  '/admin/config': 'Administration',
-  '/inbox': 'Inbox',
-  '/saved': 'Saved',
-  '/about': 'About',
-  '/profile/user': 'Profile',
-  '/profile/settings': 'Profile Settings',
-  '/profile/blocks': 'Blocks',
-}
-
 export async function uploadImage(
   image: File | null | undefined,
   instance: string,
-  jwt: string
+  jwt: string,
 ): Promise<string | undefined> {
   if (!image) return
 
   const formData = new FormData()
   formData.append('images[]', image)
 
-  if (feature('unproxiedImageUpload', get(site)?.version)) {
+  if (feature('unproxiedImageUpload', site.data?.version)) {
     const res = await client({ auth: jwt, instanceURL: instance }).uploadImage({
       image: image,
     })
@@ -161,7 +144,7 @@ export async function uploadImage(
       {
         method: 'POST',
         body: formData,
-      }
+      },
     )
 
     const json = await response.json()
@@ -173,7 +156,7 @@ export async function uploadImage(
       `${
         (await response.text().catch((_) => undefined)) ??
         'Failed to upload image'
-      }: ${response.status}: ${response.statusText}`
+      }: ${response.status}: ${response.statusText}`,
     )
   }
 }

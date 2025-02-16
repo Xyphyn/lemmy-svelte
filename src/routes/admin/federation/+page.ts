@@ -1,5 +1,5 @@
-import { profile } from '$lib/auth.js'
-import { getClient } from '$lib/lemmy.js'
+import { profile } from '$lib/auth.svelte'
+import { getClient } from '$lib/lemmy.svelte.js'
 import { get } from 'svelte/store'
 
 export async function load({ fetch, parent }) {

@@ -1,21 +1,34 @@
 <script lang="ts">
-	let forID: string | undefined = undefined
-	export { forID as for }
-	/**
-	 * The `text` prop will take precedence over the slot.
-	 */
-	export let text: string | undefined = undefined
+  interface Props {
+    for?: string | undefined
+    /**
+     * The `text` prop will take precedence over the slot.
+     */
+    text?: string | undefined
+    class?: string
+    children?: import('svelte').Snippet
+    [key: string]: any
+  }
+
+  let {
+    for: forID = undefined,
+    text = undefined,
+    class: clazz = '',
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
 <svelte:element
-	this={forID ? 'label' : 'span'}
-	{...$$restProps}
-	for={forID}
-	class="text-sm text-slate-800 dark:text-zinc-200 font-medium w-full {$$props.class || ''}"
+  this={forID ? 'label' : 'span'}
+  {...rest}
+  for={forID}
+  class="text-sm text-slate-800 dark:text-zinc-200 font-medium w-full {clazz ||
+    ''}"
 >
-	{#if text}
-		{text}
-	{:else if $$slots.default}
-		<slot />
-	{/if}
+  {#if text}
+    {text}
+  {:else if children}
+    {@render children?.()}
+  {/if}
 </svelte:element>

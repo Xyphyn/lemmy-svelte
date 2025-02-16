@@ -1,8 +1,10 @@
-import { client, getInstance } from '$lib/lemmy.js'
-import type { View } from '$lib/settings'
+import { profile } from '$lib/auth.svelte'
+import { client } from '$lib/lemmy.svelte.js'
+import type { View } from '$lib/settings.svelte'
 import { isImage, isVideo } from '$lib/ui/image'
-import { canParseUrl, findClosestNumber } from '$lib/util'
+import { canParseUrl, findClosestNumber } from '$lib/util.svelte'
 import type { CommentView, PersonView, Post, PostView } from 'lemmy-js-client'
+import { get } from 'svelte/store'
 
 export const isCommentMutable = (comment: CommentView, me: PersonView) =>
   me.person.id == comment.creator.id
@@ -10,17 +12,18 @@ export const isCommentMutable = (comment: CommentView, me: PersonView) =>
 export const bestImageURL = (
   post: Post,
   compact: boolean = true,
-  width: number = 1024
+  width: number = 1024,
 ) => {
-  if (post.thumbnail_url) return optimizeImageURL(post.thumbnail_url, width)
-  else if (post.url) return optimizeImageURL(post.url, width)
+  if (post.url) return optimizeImageURL(post.url, width)
+  else if (post.thumbnail_url)
+    return optimizeImageURL(post.thumbnail_url, width)
 
   return post.url ?? ''
 }
 
 export const optimizeImageURL = (
   urlStr: string,
-  width: number = 1024
+  width: number = 1024,
 ): string => {
   try {
     const url = new URL(urlStr)
@@ -32,8 +35,8 @@ export const optimizeImageURL = (
         'thumbnail',
         findClosestNumber(
           [128, 196, 256, 512, 728, 1024, 1536],
-          width
-        ).toString()
+          width,
+        ).toString(),
       )
     }
 
@@ -57,7 +60,8 @@ export const isYoutubeLink = (url?: string): RegExpMatchArray | null => {
   return url?.match?.(YOUTUBE_REGEX)
 }
 
-export const postLink = (post: Post) => `/post/${getInstance()}/${post.id}`
+export const postLink = (post: Post) =>
+  `/post/${encodeURIComponent(profile.data.instance)}/${post.id}`
 
 export type MediaType = 'video' | 'image' | 'iframe' | 'embed' | 'none'
 export type IframeType = 'youtube' | 'video' | 'none'
@@ -82,7 +86,7 @@ export const iframeType = (url: string): IframeType => {
 export async function hidePost(
   id: number,
   hide: boolean,
-  jwt: string
+  jwt: string,
 ): Promise<boolean> {
   const res = await client({ auth: jwt }).hidePost({
     hide: hide,

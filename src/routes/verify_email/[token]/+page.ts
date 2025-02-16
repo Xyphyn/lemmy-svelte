@@ -1,4 +1,4 @@
-import { getClient } from '$lib/lemmy.js'
+import { getClient } from '$lib/lemmy.svelte.js'
 import { error } from '@sveltejs/kit'
 
 export async function load({ fetch, params }) {

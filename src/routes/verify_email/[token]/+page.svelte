@@ -1,5 +1,5 @@
 <script>
-  import { LINKED_INSTANCE_URL } from '$lib/instance'
+  import { LINKED_INSTANCE_URL } from '$lib/instance.svelte'
   import { t } from '$lib/translations'
   import { Check, Icon } from 'svelte-hero-icons'
 </script>

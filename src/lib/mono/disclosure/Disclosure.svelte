@@ -2,17 +2,33 @@
   import { backOut, expoOut } from 'svelte/easing'
   import { slide } from 'svelte/transition'
 
-  export let open: boolean = false
+  interface Props {
+    open?: boolean
+    class?: string
+    summary?: import('svelte').Snippet<[any]>
+    extended?: import('svelte').Snippet
+    children?: import('svelte').Snippet<[any]>
+    [key: string]: any
+  }
+
+  let {
+    open = $bindable(false),
+    class: clazz = '',
+    summary,
+    extended,
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
-<div {...$$restProps} class={$$props.class}>
-  <button on:click={() => (open = !open)} class="w-full">
-    <slot name="summary" {open} />
+<div {...rest} class={['w-full', clazz]}>
+  <button onclick={() => (open = !open)} class="w-full">
+    {@render summary?.({ open })}
   </button>
-  <slot name="extended" />
+  {@render extended?.()}
   {#if open}
     <div transition:slide={{ axis: 'y', easing: expoOut, duration: 300 }}>
-      <slot {open} />
+      {@render children?.({ open })}
     </div>
   {/if}
 </div>

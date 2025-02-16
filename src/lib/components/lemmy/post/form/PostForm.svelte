@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import { createEventDispatcher, onDestroy, onMount } from 'svelte'
-  import { client, site } from '$lib/lemmy.js'
+  import { client, site } from '$lib/lemmy.svelte.js'
   import type { Community, Post, PostView } from 'lemmy-js-client'
   import { Select, Spinner, Switch, toast } from 'mono-svelte'
   import {
@@ -14,9 +16,9 @@
     Link,
     XMark,
   } from 'svelte-hero-icons'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
-  import { placeholders, uploadImage } from '$lib/util.js'
+  import { placeholders, uploadImage } from '$lib/util.svelte.js'
   import { Checkbox, TextInput } from 'mono-svelte'
   import { getSessionStorage, setSessionStorage } from '$lib/session.js'
   import ObjectAutocomplete from '$lib/components/lemmy/ObjectAutocomplete.svelte'
@@ -32,49 +34,63 @@
   } from '$lib/components/error/ErrorContainer.svelte'
   import { errorMessage } from '$lib/lemmy/error'
   import FreeTextInput from '$lib/components/input/FreeTextInput.svelte'
+  import Option from 'mono-svelte/forms/select/Option.svelte'
 
-  export let edit = false
-
-  /**
-   * The post to edit
-   */
-  export let editingPost: Post | undefined = undefined
-
-  export let passedCommunity: Community | undefined = undefined
-
-  export let data: {
-    community: Community | null
-    title: string
-    body: string
-    image: FileList | null
-    thumbnail?: string
-    url?: string
-    nsfw: boolean
-    loading: boolean
-    alt_text?: string
-    language_id?: number
-  } = {
-    community: null,
-    title: '',
-    body: '',
-    image: null,
-    thumbnail: undefined,
-    url: undefined,
-    nsfw: false,
-    loading: false,
-    alt_text: undefined,
-    language_id: undefined,
+  interface Props {
+    edit?: boolean
+    /**
+     * The post to edit
+     */
+    editingPost?: Post | undefined
+    passedCommunity?: Community | undefined
+    passedData?: {
+      community: Community | null
+      title: string
+      body: string
+      image: FileList | null
+      thumbnail?: string
+      url?: string
+      nsfw: boolean
+      loading: boolean
+      alt_text?: string
+      language_id?: number | string
+    }
+    formtitle?: import('svelte').Snippet
+    onsubmit?: (post: PostView) => void
   }
+
+  let {
+    edit = false,
+    editingPost = undefined,
+    passedCommunity = undefined,
+    passedData = {
+      community: null,
+      title: '',
+      body: '',
+      image: null,
+      thumbnail: undefined,
+      url: undefined,
+      nsfw: false,
+      loading: false,
+      alt_text: undefined,
+      language_id: undefined,
+    },
+    formtitle,
+    onsubmit,
+  }: Props = $props()
+
+  let data = $state(passedData)
+
   // weird select menu language handling
   // @ts-ignore
-  $: if (data.language_id === '') data.language_id = undefined
+  $effect(() => {
+    if (data.language_id === '') data.language_id = undefined
+  })
 
   let saveDraft = edit ? false : true
-  let communitySearch = passedCommunity?.name ?? ''
+  let communitySearch = $state(passedCommunity?.name ?? '')
 
-  let communities: Community[] = []
-
-  const dispatcher = createEventDispatcher<{ submit: PostView }>()
+  let communities: Community[] = $state([])
 
   onMount(async () => {
     if (editingPost) {
@@ -117,7 +133,7 @@
       })
       return
     }
-    if (!data.title || !$profile?.jwt) return
+    if (!data.title || !profile.data?.jwt) return
     if (data.url && data.url != '') {
       try {
         new URL(data.url)
@@ -153,7 +169,7 @@
 
         console.log(`Edited post ${post?.post_view.post.id}`)
 
-        dispatcher('submit', post.post_view)
+        onsubmit?.(post.post_view)
       } else {
         const post = await client().createPost({
           community_id: data.community!.id,
@@ -171,7 +187,7 @@
         console.log(`Uploaded post ${post?.post_view.post.id}`)
 
         saveDraft = false
-        dispatcher('submit', post.post_view)
+        onsubmit?.(post.post_view)
       }
     } catch (err) {
       pushError({ message: errorMessage(err as any), scope: 'post-form' })
@@ -179,7 +195,7 @@
     }
   }
 
-  let uploadingImage = false
+  let uploadingImage = $state(false)
 
   const generateTitle = async (url: string | undefined) => {
     if (!url) return
@@ -224,15 +240,17 @@
     return true
   }
 
-  let generation = {
+  let generation = $state({
     loading: false,
     generatable: false,
     title: '',
-  }
+  })
 
-  let addAltText = false
+  let addAltText = $state(false)
 
-  $: generation.generatable = canGenerateTitle(data.url)
+  run(() => {
+    generation.generatable = canGenerateTitle(data.url)
+  })
 </script>
 
 {#if uploadingImage}
@@ -240,32 +258,32 @@
     <UploadModal
       bind:open={uploadingImage}
       multiple={false}
-      on:upload={(e) => {
-        if (e.detail) data.url = e.detail[0]
+      onupload={(e) => {
+        if (e) data.url = e[0]
         uploadingImage = false
       }}
     />
   {/await}
 {/if}
 
-<form on:submit|preventDefault={submit} class="flex flex-col gap-4 h-full">
-  <slot name="formtitle">
+<form onsubmit={preventDefault(submit)} class="flex flex-col gap-4 h-full">
+  {#if formtitle}{@render formtitle()}{:else}
     <Header class="font-bold text-xl">
       {edit ? $t('form.post.edit') : $t('form.post.create')}
     </Header>
-  </slot>
+  {/if}
   <ErrorContainer scope="post-form" />
   {#if !edit && data}
     {#if !data.community}
       <ObjectAutocomplete
         bind:q={communitySearch}
-        bind:items={communities}
-        jwt={$profile?.jwt}
+        items={communities}
+        jwt={profile.data?.jwt}
         listing_type="All"
         label={$t('form.post.community')}
         required
-        on:select={(e) => {
-          const c = e.detail
+        onselect={(e) => {
+          const c = e
           if (!c) {
             data.community = null
             return
@@ -281,16 +299,17 @@
         <span class="font-medium text-sm">{$t('form.post.community')}</span>
         <Button
           class="w-full !bg-white dark:!bg-black h-[38px]"
-          on:click={() => (data.community = null)}
+          onclick={() => (data.community = null)}
           alignment="left"
           size="sm"
         >
-          <Avatar
-            url={data.community.icon}
-            alt={data.community.name}
-            width={24}
-            slot="prefix"
-          />
+          {#snippet prefix()}
+            <Avatar
+              url={data?.community?.icon}
+              alt={data.community?.name}
+              width={24}
+            />
+          {/snippet}
           <div class="flex flex-col gap-0">
             <span class="text-xs">{data.community.name}</span>
             <span class="text-[10px] leading-3">
@@ -311,7 +330,7 @@
   <MarkdownEditor
     label={$t('form.post.body')}
     bind:value={data.body}
-    placeholder={placeholders.get('post')}
+    placeholder={placeholders.get('body')}
     previewButton
   />
   {#if data.url !== undefined}
@@ -324,46 +343,47 @@
       />
       <div class="flex items-center gap-2 actions">
         <div
-          class="border border-slate-100 rounded-xl h-6 w-6 grid place-items-center"
+          class="border border-slate-100 dark:border-zinc-800 dark:text-zinc-400 text-slate-600 rounded-xl h-6 w-6 grid place-items-center"
         >
-          <Icon src={Plus} size="16" micro slot="prefix" />
+          <Icon src={Plus} size="16" micro />
         </div>
         {#if data.url}
           <Button
-            on:click={() => (addAltText = !addAltText)}
+            onclick={() => (addAltText = !addAltText)}
             rounding="pill"
             size="sm"
             color="ghost"
             class="text-xs"
           >
-            <Icon
-              src={ChatBubbleBottomCenterText}
-              size="15"
-              micro
-              slot="prefix"
-            />{$t('form.post.altText')}
+            {#snippet prefix()}
+              <Icon src={ChatBubbleBottomCenterText} size="15" micro />
+            {/snippet}{$t('form.post.altText')}
           </Button>
         {/if}
         <Button
-          on:click={() => (uploadingImage = !uploadingImage)}
+          onclick={() => (uploadingImage = !uploadingImage)}
           rounding="pill"
           size="sm"
           color="ghost"
           class="text-xs"
         >
-          <Icon src={Photo} size="15" micro slot="prefix" />
+          {#snippet prefix()}
+            <Icon src={Photo} size="15" micro />
+          {/snippet}
           {$t('form.post.uploadImage')}
         </Button>
         {#if generation.generatable}
           <Button
-            on:click={() => generateTitle(data.url)}
+            onclick={() => generateTitle(data.url)}
             loading={generation.loading}
             rounding="pill"
             size="sm"
             color="ghost"
             class="text-xs"
           >
-            <Icon src={Sparkles} size="15" micro slot="prefix" />
+            {#snippet prefix()}
+              <Icon src={Sparkles} size="15" micro />
+            {/snippet}
             {$t('form.post.generateTitle')}
           </Button>
         {/if}
@@ -373,7 +393,7 @@
   <div class="flex flex-row gap-2 flex-wrap">
     {#if data.url === undefined}
       <Button
-        on:click={async () => {
+        onclick={async () => {
           data.url = ''
           try {
             const url = new URL(await navigator.clipboard.readText())
@@ -388,7 +408,7 @@
         {$t('form.post.addUrl')}
       </Button>
       <Button
-        on:click={() => {
+        onclick={() => {
           data.url = ''
           uploadingImage = true
         }}
@@ -400,7 +420,7 @@
       </Button>
     {/if}
     {#if data.language_id === undefined}
-      <Button size="sm" rounding="pill" on:click={() => (data.language_id = 0)}>
+      <Button size="sm" rounding="pill" onclick={() => (data.language_id = 0)}>
         <Icon src={Language} size="16" micro />
         {$t('form.post.setLanguage')}
       </Button>
@@ -413,18 +433,18 @@
   {/if}
   <Switch bind:checked={data.nsfw}>{$t('form.post.nsfw')}</Switch>
   {#if data.language_id !== undefined}
-    {#if $site}
+    {#if site.data}
       <Select
         class="w-max"
         label={$t('settings.app.lang.title')}
         bind:value={data.language_id}
       >
-        <option value={undefined}>
+        <Option value={undefined}>
           <Icon src={XMark} size="16" micro />
           {$t('form.post.unset')}
-        </option>
-        {#each $site?.all_languages as language}
-          <option value={language.id.toString()}>{language.name}</option>
+        </Option>
+        {#each site.data?.all_languages as language}
+          <Option value={language.id.toString()}>{language.name}</Option>
         {/each}
       </Select>
     {:else}
@@ -433,7 +453,7 @@
       </div>
     {/if}
   {/if}
-  <div class="mt-auto" />
+  <div class="mt-auto"></div>
   <div class="flex flex-row items-center gap-2 w-full">
     <Button
       submit
@@ -448,7 +468,7 @@
 
     {#if !edit}
       <Button
-        on:click={() => {
+        onclick={() => {
           toast({ content: $t('toast.restoredFromDraft') })
           const draft = getSessionStorage('postDraft')
           if (draft && !edit) {

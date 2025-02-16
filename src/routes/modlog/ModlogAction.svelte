@@ -16,12 +16,14 @@
   } from 'svelte-hero-icons'
   import type { ActionName } from './+page.js'
 
-  export let action: ActionName
+  interface Props {
+    action: ActionName
+  }
 
-  $: actionData = getAction(action)
+  let { action }: Props = $props()
 
   const getAction = (
-    action: ActionName
+    action: ActionName,
   ): { icon: IconSource; text: string; class: string } => {
     switch (action) {
       case 'ban': {
@@ -151,6 +153,7 @@
       class: '',
     }
   }
+  let actionData = $derived(getAction(action))
 </script>
 
 <span class="font-bold">

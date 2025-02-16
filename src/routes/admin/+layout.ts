@@ -1,20 +1,16 @@
-import { profile } from '$lib/auth.js'
-import { get } from 'svelte/store'
-import { getClient } from '$lib/lemmy.js'
-import { site as siteStore } from '$lib/lemmy'
+import { getClient } from '$lib/lemmy.svelte.js'
+import { site as siteStore } from '$lib/lemmy.svelte.js'
 
 export async function load({ fetch }) {
-  if (!get(profile)) return
-  let { jwt } = get(profile)!
-  let site = get(siteStore)
+  let site = siteStore
 
-  if (!site) {
+  if (!site.data) {
     const res = await getClient(undefined, fetch).getSite()
 
-    site = res
+    site.data = res
   }
 
   return {
-    site: site,
+    site: site.data,
   }
 }

@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { searchParam } from '$lib/util.js'
-  import { page } from '$app/stores'
+  import { searchParam } from '$lib/util.svelte.js'
+  import { page } from '$app/state'
   import ObjectAutocomplete from '$lib/components/lemmy/ObjectAutocomplete.svelte'
-  import { profile } from '$lib/auth.js'
-  import { userSettings } from '$lib/settings.js'
+  import { profile } from '$lib/auth.svelte.js'
+  import { settings } from '$lib/settings.svelte.js'
   import ModlogItemCard from './item/ModlogItemCard.svelte'
   import ModlogItemTable from './item/ModlogItemTable.svelte'
   import { Button, Select } from 'mono-svelte'
@@ -19,17 +21,22 @@
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { isAdmin } from '$lib/components/lemmy/moderation/moderation.js'
   import { browser } from '$app/environment'
+  import Option from 'mono-svelte/forms/select/Option.svelte'
 
-  export let data
+  let { data = $bindable() } = $props()
 
-  let view = `${
-    $userSettings.modlogCardView ?? browser
-      ? !window.matchMedia('(min-width: 1600px)').matches
-      : false
-  }`
+  let view = $state(
+    `${
+      (settings.modlogCardView ?? browser)
+        ? !window.matchMedia('(min-width: 1600px)').matches
+        : false
+    }`,
+  )
 
-  $: $userSettings.modlogCardView =
-    view == 'true' ? true : view == 'false' ? false : undefined
+  run(() => {
+    settings.modlogCardView =
+      view == 'true' ? true : view == 'false' ? false : undefined
+  })
 </script>
 
 <svelte:head>
@@ -41,121 +48,115 @@
   <div class="flex flex-row flex-wrap gap-2">
     <Select
       bind:value={data.type}
-      on:change={(e) => searchParam($page.url, 'type', data.type, 'page')}
+      onchange={() => searchParam(page.url, 'type', data.type, 'page')}
       class="w-48"
     >
-      <span slot="label" class="flex gap-1 items-center">
-        <Icon src={Bars3BottomRight} size="15" mini />
-        Type
-      </span>
-      <option value="All">All</option>
-      <option value="ModRemovePost">Remove Post</option>
-      <option value="ModLockPost">Lock Post</option>
-      <option value="ModFeaturePost">Feature Post</option>
-      <option value="ModRemoveComment">Remove Comment</option>
-      <option value="ModRemoveCommunity">Remove Community</option>
-      <option value="ModBanFromCommunity">Ban From Community</option>
-      <option value="ModAddCommunity">Add Moderator</option>
-      <option value="ModTransferCommunity">Transfer Community</option>
-      <option value="ModAdd">Add Admin</option>
-      <option value="ModBan">Ban Admin</option>
-      <option value="ModHideCommunity">Hide Community</option>
-      <option value="AdminPurgePerson">Purge User</option>
-      <option value="AdminPurgeCommunity">Purge Community</option>
-      <option value="AdminPurgePost">Purge Post</option>
-      <option value="AdminPurgeComment">Purge Comment</option>
+      {#snippet customLabel()}
+        <span class="flex gap-1 items-center">
+          <Icon src={Bars3BottomRight} size="15" mini />
+          Type
+        </span>
+      {/snippet}
+      <Option value="All">All</Option>
+      <Option value="ModRemovePost">Remove Post</Option>
+      <Option value="ModLockPost">Lock Post</Option>
+      <Option value="ModFeaturePost">Feature Post</Option>
+      <Option value="ModRemoveComment">Remove Comment</Option>
+      <Option value="ModRemoveCommunity">Remove Community</Option>
+      <Option value="ModBanFromCommunity">Ban From Community</Option>
+      <Option value="ModAddCommunity">Add Moderator</Option>
+      <Option value="ModTransferCommunity">Transfer Community</Option>
+      <Option value="ModAdd">Add Admin</Option>
+      <Option value="ModBan">Ban Admin</Option>
+      <Option value="ModHideCommunity">Hide Community</Option>
+      <Option value="AdminPurgePerson">Purge User</Option>
+      <Option value="AdminPurgeCommunity">Purge Community</Option>
+      <Option value="AdminPurgePost">Purge Post</Option>
+      <Option value="AdminPurgeComment">Purge Comment</Option>
     </Select>
 
     <Select bind:value={view} class="w-36">
-      <span slot="label" class="flex gap-1 items-center">
-        <Icon src={ViewColumns} size="15" mini />
-        View
-      </span>
-      <option value="false">Table</option>
-      <option value="true">Cards</option>
-      <option value="undefined">Default</option>
+      {#snippet customLabel()}
+        <span class="flex gap-1 items-center">
+          <Icon src={ViewColumns} size="15" mini />
+          View
+        </span>
+      {/snippet}
+      <Option value="false">Table</Option>
+      <Option value="true">Cards</Option>
+      <Option value="undefined">Default</Option>
     </Select>
   </div>
   <div class="flex flex-col md:flex-row md:items-center gap-2 w-full">
     <ObjectAutocomplete
       type="instance"
       placeholder="Filter by instance"
-      jwt={$profile?.jwt}
+      jwt={profile.data?.jwt}
       showWhenEmpty={true}
       label="Instance"
       class="flex-1"
-      q={$page.url.searchParams.get('instance') || ''}
-      on:select={(e) =>
+      q={page.url.searchParams.get('instance') || ''}
+      onselect={(e) =>
         searchParam(
-          $page.url,
+          page.url,
           'instance',
-          e.detail?.domain.toString() ?? '',
+          e?.domain.toString() ?? '',
           'page',
           'community',
           'user',
-          'mod_id'
+          'mod_id',
         )}
     />
     <ObjectAutocomplete
       placeholder="Filter by community"
-      jwt={$profile?.jwt}
+      jwt={profile.data?.jwt}
       listing_type="All"
       showWhenEmpty={true}
       label="Community"
       class="flex-1"
-      q={$page.url.searchParams.get('community') ? 'Selected' : ''}
-      on:select={(e) =>
-        searchParam(
-          $page.url,
-          'community',
-          e.detail?.id.toString() ?? '',
-          'page'
-        )}
+      q={page.url.searchParams.get('community') ? 'Selected' : ''}
+      onselect={(e) =>
+        searchParam(page.url, 'community', e?.id.toString() ?? '', 'page')}
     />
     <UserAutocomplete
-      instance={$page.url.searchParams.get('instance') || undefined}
+      instance={page.url.searchParams.get('instance') || undefined}
       placeholder="Filter by user"
-      jwt={$profile?.jwt}
+      jwt={profile.data?.jwt}
       listing_type="All"
       showWhenEmpty={true}
       class="flex-1"
       label="User"
-      q={$page.url.searchParams.get('user')
-        ? data.filters.user ?? 'Selected'
+      q={page.url.searchParams.get('user')
+        ? (data.filters.user ?? 'Selected')
         : ''}
-      on:select={(e) =>
-        searchParam($page.url, 'user', e.detail?.id.toString() ?? '', 'page')}
+      onselect={(e) =>
+        searchParam(page.url, 'user', e?.id.toString() ?? '', 'page')}
     />
-    {#if $profile?.user && isAdmin($profile?.user)}
+    {#if profile.data?.user && isAdmin(profile.data?.user)}
       <UserAutocomplete
         placeholder="Filter by moderator"
-        jwt={$profile?.jwt}
+        jwt={profile.data?.jwt}
         listing_type="All"
         showWhenEmpty={true}
         class="flex-1"
         label="Moderator"
-        q={$page.url.searchParams.get('mod_id')
-          ? data.filters.moderator ?? 'Selected'
+        q={page.url.searchParams.get('mod_id')
+          ? (data.filters.moderator ?? 'Selected')
           : ''}
-        on:select={(e) =>
-          searchParam(
-            $page.url,
-            'mod_id',
-            e.detail?.id.toString() ?? '',
-            'page'
-          )}
+        onselect={(e) =>
+          searchParam(page.url, 'mod_id', e?.id.toString() ?? '', 'page')}
       />
     {/if}
     <Button
-      on:click={() => {
+      onclick={() => {
         searchParam(
-          $page.url,
+          page.url,
           '',
           '',
           'user',
           'moderator',
           'community',
-          'instance'
+          'instance',
         )
       }}
       size="square-lg"
@@ -166,7 +167,7 @@
     </Button>
   </div>
   {#if data.modlog && data.modlog.length > 0}
-    {#if $userSettings.modlogCardView ?? !window.matchMedia('(min-width: 1600px)').matches}
+    {#if settings.modlogCardView ?? !window.matchMedia('(min-width: 1600px)').matches}
       <div class="flex flex-col gap-4">
         {#each data.modlog as modlog}
           <ModlogItemCard item={modlog} />
@@ -208,10 +209,7 @@
         </table>
       </div>
     {/if}
-    <Pageination
-      page={data.page}
-      on:change={(e) => searchParam($page.url, 'page', e.detail.toString())}
-    />
+    <Pageination page={data.page} href={(page) => `?page=${page}`} />
   {:else}
     <Placeholder
       title="No results"

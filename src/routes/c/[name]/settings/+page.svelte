@@ -3,16 +3,15 @@
   import CommunityTitle from '$lib/components/lemmy/community/CommunityTitle.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data
+  let { data } = $props()
 </script>
 
 <div class="flex flex-col gap-4">
   <Header pageHeader>
     <span>Settings</span>
-    <CommunityTitle
-      slot="extended"
-      community={data.community.community_view.community}
-    />
+    {#snippet extended()}
+      <CommunityTitle community={data.community.community_view.community} />
+    {/snippet}
   </Header>
   <CommunityForm
     edit={data.community.community_view.community.id}
@@ -27,8 +26,11 @@
       banner: data.community.community_view.community.banner,
       visibility: data.community.community_view.community.visibility,
       submitting: false,
+      languages: data.community.discussion_languages,
     }}
   >
-    <svelte:fragment slot="formtitle">{''}</svelte:fragment>
+    {#snippet formtitle()}
+      {''}
+    {/snippet}
   </CommunityForm>
 </div>

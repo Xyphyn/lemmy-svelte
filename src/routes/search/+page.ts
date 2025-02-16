@@ -1,5 +1,5 @@
-import { profile } from '$lib/auth.js'
-import { client, getClient } from '$lib/lemmy.js'
+import { profile } from '$lib/auth.svelte'
+import { client, getClient } from '$lib/lemmy.svelte.js'
 import { getItemPublished } from '$lib/lemmy/item.js'
 import type {
   CommentView,
@@ -46,7 +46,7 @@ export async function load({ url, fetch }) {
       everything.sort(
         (a, b) =>
           new Date(getItemPublished(b)).getTime() -
-          new Date(getItemPublished(a)).getTime()
+          new Date(getItemPublished(a)).getTime(),
       )
     }
 
@@ -57,7 +57,7 @@ export async function load({ url, fetch }) {
       query: query,
       results: everything,
       streamed: {
-        object: get(profile)?.jwt
+        object: profile.data?.jwt
           ? getClient(undefined, fetch).resolveObject({
               q: query,
             })

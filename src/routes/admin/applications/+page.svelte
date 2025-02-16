@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import Pageination from '$lib/components/ui/Pageination.svelte'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import { ClipboardDocumentCheck, Icon } from 'svelte-hero-icons'
   import Application from './Application.svelte'
   import MultiSelect from '$lib/components/input/Switch.svelte'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data
+  let { data } = $props()
 </script>
 
 <Header pageHeader>{$t('routes.admin.applications.title')}</Header>
@@ -17,8 +17,7 @@
   options={[false, true]}
   selected={data.unreadOnly ?? true}
   optionNames={[$t('filter.location.all'), $t('filter.unread')]}
-  on:select={(e) =>
-    searchParam($page.url, 'unreadOnly', e.detail.toString(), 'page')}
+  onselect={(e) => searchParam(page.url, 'unreadOnly', e.toString(), 'page')}
 />
 {#if data.applications && data.applications.length > 0}
   <div class="flex flex-col gap-4">
@@ -28,10 +27,7 @@
   </div>
   {#if data.applications.length >= 40}
     <div class="mt-auto">
-      <Pageination
-        page={data.page}
-        on:change={(p) => searchParam($page.url, 'page', p.detail.toString())}
-      />
+      <Pageination page={data.page} href={(page) => `?page=${page}`} />
     </div>
   {/if}
 {:else}

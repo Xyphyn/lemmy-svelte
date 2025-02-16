@@ -1,8 +1,13 @@
 <script lang="ts">
   import { photonify } from './plugins'
 
-  export let href = ''
-  export let title = undefined
+  interface Props {
+    href?: string
+    title?: any
+    children?: import('svelte').Snippet
+  }
+
+  let { href = '', title = undefined, children }: Props = $props()
 
   export const parseURL = (href: string) => {
     try {
@@ -12,7 +17,7 @@
     }
   }
 
-  $: photonified = photonify(href)
+  let photonified = $derived(photonify(href))
 </script>
 
 <a
@@ -20,5 +25,5 @@
   {title}
   class="hover:underline text-sky-600 dark:text-sky-500"
 >
-  <slot />
+  {@render children?.()}
 </a>

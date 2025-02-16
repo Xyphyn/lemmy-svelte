@@ -7,7 +7,7 @@
   import { Material, Popover } from 'mono-svelte'
   import { Check, Icon, InformationCircle } from 'svelte-hero-icons'
 
-  export let data
+  let { data } = $props()
 </script>
 
 <Header pageHeader>Linked Instances</Header>
@@ -17,7 +17,9 @@
       <h2 class="font-bold text-xl flex flex-row items-center gap-1">
         Linked
         <Popover openOnHover>
-          <Icon src={InformationCircle} mini size="20" slot="target" />
+          {#snippet target()}
+            <Icon src={InformationCircle} mini size="20" />
+          {/snippet}
           <p class="font-normal">
             These are the instances your instance can see and interact with
             content from.
@@ -57,7 +59,9 @@
         Blocked
 
         <Popover openOnHover placement="bottom">
-          <Icon src={InformationCircle} mini size="20" slot="target" />
+          {#snippet target()}
+            <Icon src={InformationCircle} mini size="20" />
+          {/snippet}
           <p class="font-normal">
             These are the instances your instance is explicitly blocking content
             from.

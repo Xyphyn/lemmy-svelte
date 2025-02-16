@@ -1,36 +1,46 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import type { Post } from 'lemmy-js-client'
-  import type { CommentNodeI } from './comments'
+  import type { CommentNodeI } from './comments.svelte'
   import { createWindowVirtualizer } from '@tanstack/svelte-virtual'
   import Comments from './Comments.svelte'
   import { browser } from '$app/environment'
   import { onMount } from 'svelte'
 
-  export let nodes: CommentNodeI[]
-  export let post: Post
-  export let scrollTo: string | undefined
-
-  let virtualListEl: HTMLElement | undefined = undefined
-
-  $: virtualizer = createWindowVirtualizer({
-    count: nodes.length,
-    estimateSize: () => 30,
-    scrollMargin: virtualListEl?.offsetTop,
-    initialRect: {
-      height: 1500,
-      width: 99999,
-    },
-    overscan: 5,
-  })
-
-  let virtualItemEls: HTMLElement[] = []
-
-  $: items = $virtualizer.getVirtualItems()
-
-  $: {
-    if (virtualItemEls.length)
-      virtualItemEls.forEach((el) => $virtualizer.measureElement(el))
+  interface Props {
+    nodes: CommentNodeI[]
+    post: Post
+    scrollTo: string | undefined
   }
+
+  let { nodes, post, scrollTo }: Props = $props()
+
+  let virtualListEl = $state<HTMLElement>()
+
+  let virtualizer = $derived(
+    createWindowVirtualizer({
+      count: nodes.length,
+      estimateSize: () => 30,
+      scrollMargin: virtualListEl?.offsetTop,
+      initialRect: {
+        height: browser ? 1 : 1500,
+        width: 99999,
+      },
+      overscan: 5,
+    }),
+  )
+
+  let virtualItemEls: HTMLElement[] = $state([])
+
+  let items = $derived($virtualizer.getVirtualItems())
+
+  const updateItems = () =>
+    virtualItemEls.forEach((el) => $virtualizer.measureElement(el))
+
+  $effect(() => {
+    if (virtualItemEls) updateItems()
+  })
 
   onMount(() => {
     if (scrollTo) {
@@ -61,7 +71,13 @@
         data-index={row.index}
         class="-mx-4 sm:-mx-6 px-4 sm:px-6"
       >
-        <Comments isParent={true} nodes={[nodes[row.index]]} {post} />
+        <Comments
+          isParent={true}
+          bind:nodes={
+            () => [nodes[row.index]], (v) => (nodes[row.index] = v[0])
+          }
+          {post}
+        />
       </div>
     {/each}
   </div>

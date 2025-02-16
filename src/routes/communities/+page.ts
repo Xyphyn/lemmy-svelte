@@ -1,6 +1,6 @@
-import { profile } from '$lib/auth.js'
-import { LINKED_INSTANCE_URL } from '$lib/instance.js'
-import { client, getClient } from '$lib/lemmy.js'
+import { profile } from '$lib/auth.svelte'
+import { LINKED_INSTANCE_URL } from '$lib/instance.svelte.js'
+import { client, getClient } from '$lib/lemmy.svelte.js'
 import {
   type ListCommunitiesResponse,
   type ListingType,
@@ -31,6 +31,7 @@ export async function load({ url, fetch }) {
           page: page,
           sort: sort,
           type_: type,
+          show_nsfw: true,
         })
 
   return {

@@ -1,6 +1,6 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { publishedToDate } from '$lib/components/util/date.js'
-import { getClient } from '$lib/lemmy.js'
+import { getClient } from '$lib/lemmy.svelte.js'
 import {
   generalizeCommentReply,
   generalizePersonMention,
@@ -11,8 +11,7 @@ import { get } from 'svelte/store'
 type InboxFeedType = 'replies' | 'mentions' | 'messages' | 'all'
 
 export async function load({ url, fetch }) {
-  const auth = get(profile)
-  if (!auth?.jwt) return
+  if (!profile.data.jwt) return
 
   const type: InboxFeedType =
     (url.searchParams.get('type') as InboxFeedType) || 'all'
@@ -55,7 +54,7 @@ export async function load({ url, fetch }) {
   ].sort(
     (a, b) =>
       publishedToDate(b.published).getTime() -
-      publishedToDate(a.published).getTime()
+      publishedToDate(a.published).getTime(),
   )
 
   return {

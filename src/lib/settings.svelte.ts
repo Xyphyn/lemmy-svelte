@@ -1,4 +1,4 @@
-import type { CommentSortType, SortType } from 'lemmy-js-client'
+import type { CommentSortType, ListingType, SortType } from 'lemmy-js-client'
 import { writable } from 'svelte/store'
 import { env } from '$env/dynamic/public'
 import { locale } from './translations'
@@ -8,7 +8,7 @@ import type { Link } from './components/ui/navbar/link'
 console.log('Using the following default settings from the environment:')
 console.log(env)
 
-export type View = 'card' | 'cozy' | 'list' | 'compact'
+export type View = 'cozy' | 'compact'
 
 export const SSR_ENABLED = env.PUBLIC_SSR_ENABLED?.toLowerCase() == 'true'
 
@@ -40,7 +40,7 @@ interface Settings {
 
   defaultSort: {
     sort: SortType
-    feed: 'All' | 'Subscribed' | 'Local'
+    feed: ListingType
     comments: CommentSortType
   }
   hidePosts: {
@@ -86,7 +86,6 @@ interface Settings {
   dock: {
     noGap: boolean | null
     top: boolean | null
-    pins: Link[]
     paletteHotkey: string
   }
   posts: {
@@ -99,7 +98,6 @@ interface Settings {
   infiniteScroll: boolean
   language: string | null
   useRtl: boolean
-  translator: string | undefined
   parseTags: boolean
   tagRules: {
     [key: string]: 'hide' | 'blur'
@@ -145,12 +143,12 @@ export const defaultSettings: Settings = {
       },
     ],
   },
-  randomPlaceholders: toBool(env.PUBLIC_RANDOM_PLACEHOLDERS) ?? true,
+  randomPlaceholders: toBool(env.PUBLIC_RANDOM_PLACEHOLDERS) ?? false,
   modlogCardView: toBool(env.PUBLIC_MODLOG_CARD_VIEW) ?? undefined,
   debugInfo: toBool(env.PUBLIC_DEBUG_INFO) ?? false,
   expandImages: toBool(env.PUBLIC_EXPAND_IMAGES) ?? true,
   // @ts-ignore
-  view: env.PUBLIC_VIEW ?? 'cozy',
+  view: env.PUBLIC_VIEW ?? 'compact',
   // @ts-ignore
   font: env.PUBLIC_FONT ?? 'inter',
   leftAlign: toBool(env.PUBLIC_LEFT_ALIGN) ?? false,
@@ -168,7 +166,6 @@ export const defaultSettings: Settings = {
   dock: {
     noGap: toBool(env.PUBLIC_DOCK_PANEL) ?? null,
     top: toBool(env.PUBLIC_DOCK_TOP) ?? null,
-    pins: [],
     paletteHotkey: '/',
   },
   posts: {
@@ -181,7 +178,6 @@ export const defaultSettings: Settings = {
   infiniteScroll: true,
   language: env.PUBLIC_LANGUAGE ?? null,
   useRtl: false,
-  translator: env.PUBLIC_TRANSLATOR ?? undefined,
   parseTags: true,
   tagRules: {
     cw: 'blur',
@@ -191,43 +187,58 @@ export const defaultSettings: Settings = {
   logoColorMonth: null,
 }
 
-export const userSettings = writable(defaultSettings)
+function createSettingsState(initial: Settings): Settings {
+  let settings = $state(initial)
+  if (browser) {
+    try {
+      const localSettings = JSON.parse(localStorage.getItem('settings') ?? '{}')
+      const merged = mergeDeep(initial, localSettings)
 
-const migrate = (settings: any): Settings => {
-  if (typeof settings?.moderation?.removalReasonPreset == 'string') {
-    settings.moderation.presets = [
-      {
-        title: 'Preset 1',
-        content: settings.moderation.removalReasonPreset,
-      },
-    ]
-    settings.moderation.removalReasonPreset = undefined
+      settings = merged
+    } catch (e) {}
   }
-
   return settings
 }
 
-if (typeof window != 'undefined') {
-  let oldUserSettings = JSON.parse(
-    localStorage.getItem('settings') ?? JSON.stringify(defaultSettings)
-  )
+export let settings = createSettingsState(defaultSettings)
 
-  oldUserSettings = migrate(oldUserSettings)
+$effect.root(() => {
+  $effect(() => {
+    localStorage.setItem('settings', JSON.stringify(settings))
 
-  userSettings.set({
-    ...defaultSettings,
-    ...oldUserSettings,
-    settingsVer: defaultSettings.settingsVer,
+    if (settings.language) {
+      locale.set(settings.language)
+    } else {
+      if (browser) locale.set(navigator?.language)
+    }
   })
+
+  return () => {}
+})
+
+function isObject(item: any) {
+  return item && typeof item === 'object' && !Array.isArray(item)
 }
 
-userSettings.subscribe((settings) => {
-  if (typeof window != 'undefined') {
-    localStorage.setItem('settings', JSON.stringify(settings))
+/**
+ * Deep merge two objects.
+ * @param target
+ * @param ...sources
+ */
+function mergeDeep(target: any, ...sources: any[]) {
+  if (!sources.length) return target
+  const source = sources.shift()
+
+  if (isObject(target) && isObject(source)) {
+    for (const key in source) {
+      if (isObject(source[key])) {
+        if (!target[key]) Object.assign(target, { [key]: {} })
+        mergeDeep(target[key], source[key])
+      } else {
+        Object.assign(target, { [key]: source[key] })
+      }
+    }
   }
-  if (settings.language) {
-    locale.set(settings.language)
-  } else {
-    if (browser) locale.set(navigator?.language)
-  }
-})
+
+  return mergeDeep(target, ...sources)
+}

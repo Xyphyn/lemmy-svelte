@@ -19,16 +19,28 @@
   import { userLink } from '$lib/lemmy/generic'
   import { t } from '$lib/translations'
   import Entity from '../ui/Entity.svelte'
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
   import { optimizeImageURL } from './post/helpers'
+  import Link from '../input/Link.svelte'
 
-  export let site: SiteView
-  export let taglines: Tagline[] | undefined = undefined
-  export let admins: PersonView[] | undefined = undefined
-  export let version: string | undefined = undefined
+  interface Props {
+    site: SiteView
+    taglines?: Tagline[] | undefined
+    admins?: PersonView[] | undefined
+    version?: string | undefined
+    class?: string
+  }
+
+  let {
+    site,
+    taglines = undefined,
+    admins = undefined,
+    version = undefined,
+    class: clazz = '',
+  }: Props = $props()
 </script>
 
-<StickyCard class="w-full {$$props.class} text-slate-600 dark:text-zinc-400">
+<StickyCard class="w-full {clazz} text-slate-600 dark:text-zinc-400">
   {#if site.site.banner}
     <div
       class="rounded-xl
@@ -43,41 +55,15 @@
     </div>
   {/if}
   <Entity name={site.site.name} label={new URL(site.site.actor_id).hostname}>
-    <Avatar
-      width={32}
-      url={site.site.icon}
-      alt={site.site.name}
-      circle={false}
-      slot="icon"
-    />
+    {#snippet customIcon()}
+      <Avatar
+        width={32}
+        url={site.site.icon}
+        alt={site.site.name}
+        circle={false}
+      />
+    {/snippet}
   </Entity>
-  <div class="flex flex-row gap-1 !border-0">
-    <Button
-      href="/modlog"
-      title={$t('routes.modlog')}
-      color="ghost"
-      size="square-md"
-    >
-      <Icon src={Newspaper} size="16" mini />
-    </Button>
-    <Button
-      href="/legal"
-      title={$t('routes.legal.title')}
-      color="ghost"
-      size="square-md"
-    >
-      <Icon src={BuildingOffice} size="16" mini />
-    </Button>
-    <Button
-      href="/instances"
-      title={$t('routes.instances')}
-      class="3xl:rounded-l-none"
-      color="ghost"
-      size="square-md"
-    >
-      <Icon src={ServerStack} size="16" mini />
-    </Button>
-  </div>
 
   <div class="flex flex-col gap-1">
     {#if taglines && taglines.length > 0}
@@ -88,22 +74,26 @@
     {/if}
 
     <hr class="border-slate-200 dark:border-zinc-900 my-1" />
-    <Expandable bind:open={$userSettings.expand.about}>
-      <span class="flex items-center gap-1 py-1 px-2" slot="title">
-        <Icon src={InformationCircle} size="16" mini />
-        {$t('cards.site.about')}
-      </span>
+    <Expandable bind:open={settings.expand.about}>
+      {#snippet title()}
+        <span class="flex items-center gap-1 py-1 px-2">
+          <Icon src={InformationCircle} size="16" mini />
+          {$t('cards.site.about')}
+        </span>
+      {/snippet}
       <Markdown source={site.site.description} />
-      <div class="my-4" />
+      <div class="my-4"></div>
       <Markdown source={site.site.sidebar} />
     </Expandable>
 
     <hr class="border-slate-200 dark:border-zinc-900 my-1" />
-    <Expandable bind:open={$userSettings.expand.stats}>
-      <span class="flex items-center gap-1 py-1 px-2" slot="title">
-        <Icon src={ChartBar} size="16" mini />
-        {$t('cards.site.stats')}
-      </span>
+    <Expandable bind:open={settings.expand.stats}>
+      {#snippet title()}
+        <span class="flex items-center gap-1 py-1 px-2">
+          <Icon src={ChartBar} size="16" mini />
+          {$t('cards.site.stats')}
+        </span>
+      {/snippet}
       <div class="flex flex-row gap-4 flex-wrap">
         <LabelStat
           label={$t('content.users')}
@@ -125,11 +115,13 @@
 
     {#if admins}
       <hr class="border-slate-200 dark:border-zinc-900 my-1" />
-      <Expandable bind:open={$userSettings.expand.team}>
-        <span class="flex items-center gap-1 py-1 px-2" slot="title">
-          <Icon src={UserGroup} size="16" mini />
-          {$t('cards.site.admins')}
-        </span>
+      <Expandable bind:open={settings.expand.team}>
+        {#snippet title()}
+          <span class="flex items-center gap-1 py-1 px-2">
+            <Icon src={UserGroup} size="16" mini />
+            {$t('cards.site.admins')}
+          </span>
+        {/snippet}
         <ItemList
           items={admins.map((a) => ({
             id: a.person.id,
@@ -142,9 +134,23 @@
       </Expandable>
     {/if}
 
+    <div class="flex flex-row flex-wrap gap-1">
+      <Link highlight href="/modlog">
+        {$t('routes.modlog')}
+      </Link>
+      •
+      <Link highlight href="/legal">
+        {$t('routes.legal.title')}
+      </Link>
+      •
+      <Link highlight href="/instances">
+        {$t('routes.instances')}
+      </Link>
+    </div>
+
     {#if version}
       <div class="w-max">
-        <Badge title="Lemmy version">
+        <Badge label="Lemmy version">
           <Icon src={ServerStack} micro size="14" />
           {version}
         </Badge>

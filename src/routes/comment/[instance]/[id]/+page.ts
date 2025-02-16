@@ -1,7 +1,5 @@
-import { profile } from '$lib/auth.js'
-import { client } from '$lib/lemmy.js'
+import { client } from '$lib/lemmy.svelte.js'
 import { redirect } from '@sveltejs/kit'
-import { get } from 'svelte/store'
 
 export async function load({ params, fetch }) {
   const comment = await client({
@@ -13,6 +11,6 @@ export async function load({ params, fetch }) {
 
   redirect(
     302,
-    `/post/${params.instance}/${comment.comment_view.post.id}?thread=${comment.comment_view.comment.path}#${comment.comment_view.comment.id}`
+    `/post/${params.instance}/${comment.comment_view.post.id}?thread=${comment.comment_view.comment.path}#${comment.comment_view.comment.id}`,
   )
 }

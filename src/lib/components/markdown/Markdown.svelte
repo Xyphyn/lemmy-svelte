@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   import { marked } from 'marked'
   import {
     MdCode,
@@ -90,24 +90,35 @@
 <script lang="ts">
   import SvelteMarkdown from 'svelte-markdown'
 
-  export let source: string = ''
-  export let inline: boolean = false
+  interface Props {
+    source?: string
+    inline?: boolean
+    noStyle?: boolean
+    style?: string
+    class?: string
+  }
+
+  let {
+    source = '',
+    inline = false,
+    noStyle = false,
+    style = '',
+    class: clazz = '',
+  }: Props = $props()
 
   options.inline = inline
 
-  export let noStyle: boolean = false
-
-  $: tokens = marked.lexer(source)
+  let tokens = $derived.by(() => marked.lexer(source))
 </script>
 
 <div
   class="{noStyle
     ? ''
-    : 'break-words flex flex-col gap-2 leading-[1.5]'} {$$props.class}"
-  style={$$props.style}
+    : 'break-words flex flex-col gap-2 leading-[1.5]'} {clazz}"
+  {style}
 >
   <SvelteMarkdown
-    bind:source={tokens}
+    source={tokens}
     {renderers}
     {options}
     isInline={inline || undefined}

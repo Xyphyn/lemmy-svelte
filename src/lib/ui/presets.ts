@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public'
-import type { Theme, ThemeColors } from './colors'
+import type { Theme, ThemeColors } from './colors.svelte'
 
 export function getDefaultColors(): ThemeColors {
   return env.PUBLIC_THEME

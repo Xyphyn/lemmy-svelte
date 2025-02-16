@@ -4,38 +4,58 @@
   import { Label } from '../index.js'
   import { Icon, PaperClip } from 'svelte-hero-icons'
 
-  export let accept: string = '*'
-  export let id: string = generateID()
-  export let files: FileList | null = null
-  export let multiple: boolean = false
-  export let preview: boolean = true
-  export let label: string | undefined = undefined
+  interface Props {
+    accept?: string
+    id?: string
+    files?: FileList | null
+    multiple?: boolean
+    preview?: boolean
+    label?: string | undefined
+    class?: string
+    customLabel?: import('svelte').Snippet
+    button?: import('svelte').Snippet
+    choose?: import('svelte').Snippet
+  }
 
-  $: previewURLs =
-    preview && files ? Array.from(files).map(URL.createObjectURL) : undefined
+  let {
+    accept = '*',
+    id = generateID(),
+    files = $bindable(null),
+    multiple = false,
+    preview = true,
+    label = undefined,
+    class: clazz = '',
+    customLabel,
+    button,
+    choose,
+  }: Props = $props()
+
+  let previewURLs = $derived(
+    preview && files ? Array.from(files).map(URL.createObjectURL) : undefined,
+  )
 </script>
 
-<div class="flex flex-col gap-1 {$$props.class}">
-  {#if $$slots.label || label}
+<div class="flex flex-col gap-1 {clazz}">
+  {#if customLabel || label}
     <Label for={id} text={label}>
-      <slot name="label" />
+      {@render customLabel?.()}
     </Label>
   {/if}
   <label
     class="w-max relative cursor-pointer space-x-2 flex flex-row items-center"
   >
-    <slot name="button">
+    {#if button}{@render button()}{:else}
       <Button>Browse</Button>
-    </slot>
+    {/if}
     {#if previewURLs}
       <div
         class="flex flex-row items-center -space-x-1 hover:space-x-1 z-20 h-8"
       >
         {#each previewURLs as file}
-          <!-- svelte-ignore a11y-missing-attribute -->
+          <!-- svelte-ignore a11y_missing_attribute -->
           <img
             src={file}
-            on:load={() => URL.revokeObjectURL(file)}
+            onload={() => URL.revokeObjectURL(file)}
             alt={file}
             class="w-8 h-8 object-cover rounded-full hover:w-16
             hover:h-16 transition-all border border-slate-200 ring-1
@@ -45,13 +65,11 @@
       </div>
     {/if}
     <span class="flex flex-row items-center text-slate-600 dark:text-zinc-400">
-      <slot name="choose">
-        {#if (files ?? []).length == 0}
-          No file selected.
-        {:else}
-          {(files ?? []).length} files selected
-        {/if}
-      </slot>
+      {#if choose}{@render choose()}{:else if (files ?? []).length == 0}
+        No file selected.
+      {:else}
+        {(files ?? []).length} files selected
+      {/if}
     </span>
     <input
       type="file"

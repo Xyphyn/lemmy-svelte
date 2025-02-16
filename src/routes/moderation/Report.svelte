@@ -1,8 +1,8 @@
 <script lang="ts">
   import CommentItem from '$lib/components/lemmy/comment/CommentItem.svelte'
   import Post from '$lib/components/lemmy/post/Post.svelte'
-  import { toast } from 'mono-svelte'
-  import { getClient } from '$lib/lemmy.js'
+  import { Material, toast } from 'mono-svelte'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import { isCommentReport, isPostReport } from '$lib/lemmy/item.js'
   import type {
     CommentReportView,
@@ -10,7 +10,7 @@
     PrivateMessageReportView,
   } from 'lemmy-js-client'
   import { Check, CheckCircle, Icon } from 'svelte-hero-icons'
-  import { notifications, profile } from '$lib/auth.js'
+  import { notifications, profile } from '$lib/auth.svelte.js'
   import { Button } from 'mono-svelte'
   import type { ReportView } from '$lib/lemmy/report.js'
   import PrivateMessage from '$lib/components/lemmy/inbox/PrivateMessage.svelte'
@@ -18,11 +18,15 @@
   import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
 
-  export let item: ReportView
+  interface Props {
+    item: ReportView
+  }
 
-  let resolving = false
+  let { item = $bindable() }: Props = $props()
+
+  let resolving = $state(false)
   async function resolve() {
-    if (!$profile?.jwt || !$profile.user) return
+    if (!profile.data?.jwt || !profile.data.user) return
     resolving = true
 
     try {
@@ -96,19 +100,48 @@
   }
 </script>
 
-{#if item.type == 'comment'}
-  <CommentItem community={true} comment={item.item} />
-{:else if item.type == 'post'}
-  <Post post={item.item} />
-{:else if item.type == 'message'}
-  <PrivateMessage
-    message={{
-      creator: item.reportee,
-      private_message: item.item,
-      recipient: item.creator,
-    }}
-  />
-{/if}
+<div class="flex flex-row">
+  <div class="flex flex-col gap-1.5 flex-1">
+    <span class="text-xs font-medium">Report from</span>
+    <span class="font-bold">
+      <UserLink avatar user={item.creator} />
+    </span>
+  </div>
+
+  <Button
+    onclick={resolve}
+    class="h-max self-end {item.resolved
+      ? '!text-green-600 dark:!text-green-400'
+      : ''}"
+    loading={resolving}
+    disabled={resolving}
+    rounding="pill"
+    color="ghost"
+  >
+    {#snippet prefix()}
+      <Icon src={CheckCircle} micro={item.resolved} size="18" />
+    {/snippet}
+    {!item.resolved
+      ? $t('routes.moderation.resolve')
+      : $t('routes.moderation.resolved')}
+  </Button>
+</div>
+
+<Material rounding="xl" color="uniform" class="dark:bg-zinc-950">
+  {#if item.type == 'comment'}
+    <CommentItem community={true} comment={item.item} class="!p-0" />
+  {:else if item.type == 'post'}
+    <Post post={item.item} class="!p-0" />
+  {:else if item.type == 'message'}
+    <PrivateMessage
+      message={{
+        creator: item.reportee,
+        private_message: item.item,
+        recipient: item.creator,
+      }}
+    />
+  {/if}
+</Material>
 
 <div class="flex flex-row gap-4 items-center flex-wrap">
   <div>
@@ -127,17 +160,4 @@
       <UserLink avatar user={item.resolver} />
     </div>
   {/if}
-  <Button
-    on:click={resolve}
-    class="ml-auto {item.resolved
-      ? '!text-green-600 dark:!text-green-400'
-      : ''}"
-    loading={resolving}
-    disabled={resolving}
-  >
-    <Icon src={CheckCircle} micro={item.resolved} size="18" slot="prefix" />
-    {!item.resolved
-      ? $t('routes.moderation.resolve')
-      : $t('routes.moderation.resolved')}
-  </Button>
 </div>

@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export interface Instance {
     baseurl: string
     name: string
@@ -14,27 +14,29 @@
 </script>
 
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { goto } from '$app/navigation'
   import { Badge, Material, Spinner, toast } from 'mono-svelte'
-  import { DEFAULT_INSTANCE_URL } from '$lib/instance.js'
-  import { validateInstance } from '$lib/lemmy.js'
+  import { DEFAULT_INSTANCE_URL, instance } from '$lib/instance.svelte.js'
+  import { validateInstance } from '$lib/lemmy.svelte.js'
   import { Button, TextInput } from 'mono-svelte'
   import { onMount } from 'svelte'
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  let selectedInstance: string = ''
-  let validating: boolean = false
-  let placeholder = DEFAULT_INSTANCE_URL
+  let selectedInstance: string = $state('')
+  let validating: boolean = $state(false)
+  let placeholder = $state(DEFAULT_INSTANCE_URL)
 
-  let instances: Instance[] | undefined = undefined
+  let instances: Instance[] | undefined = $state(undefined)
 
   onMount(async () => {
     try {
       const res: Instance[] = (
         await fetch(`https://data.lemmyverse.net/data/instance.full.json`).then(
-          (r) => r.json()
+          (r) => r.json(),
         )
       )
         .filter((i: Instance) => i.fed)
@@ -76,7 +78,7 @@
       {#if instances}
         {#each instances as instance}
           <button
-            on:click={() => (selectedInstance = instance.baseurl ?? '')}
+            onclick={() => (selectedInstance = instance.baseurl ?? '')}
             class="flex flex-row gap-2 text-left py-2 first:pt-0 last:pb-0 items-center
             h-16 max-h-16 min-h-16 overflow-hidden w-full"
           >
@@ -109,7 +111,7 @@
   </Material>
   <form
     class="flex flex-col gap-4"
-    on:submit|preventDefault={async () => {
+    onsubmit={preventDefault(async () => {
       if (selectedInstance != '') {
         validating = true
 
@@ -124,14 +126,14 @@
 
         validating = false
       }
-    }}
+    })}
   >
     <TextInput
       bind:value={selectedInstance}
       label={$t('form.signup.chooseInstance')}
       required
       {placeholder}
-      on:input={() => {
+      oninput={() => {
         selectedInstance = selectedInstance.toLowerCase().replaceAll(' ', '')
       }}
     />

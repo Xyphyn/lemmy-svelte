@@ -10,7 +10,7 @@
     size="custom"
     color="none"
     class="w-max hover:underline text-slate-600 dark:text-zinc-400"
-    on:click={() => history?.back()}
+    onclick={() => history?.back()}
   >
     <Icon src={ArrowLeft} size="16" micro />
     {$t('account.accounts')}

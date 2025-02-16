@@ -1,6 +1,5 @@
 <script lang="ts">
   import {
-    ArrowUp,
     Bookmark,
     Icon,
     Microphone,
@@ -8,46 +7,66 @@
     Pencil,
     Plus,
     Trash,
-    PlusCircle,
-    MinusCircle,
   } from 'svelte-hero-icons'
-  import type { CommentNodeI } from './comments'
+  import type { CommentNodeI } from './comments.svelte'
   import RelativeDate from '$lib/components/util/RelativeDate.svelte'
   import CommentForm from './CommentForm.svelte'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
   import CommentActions from '$lib/components/lemmy/comment/CommentActions.svelte'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import { Disclosure, toast } from 'mono-svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button, Modal } from 'mono-svelte'
   import { publishedToDate } from '$lib/components/util/date.js'
   import ShieldIcon from '../moderation/ShieldIcon.svelte'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { onMount } from 'svelte'
   import { t } from '$lib/translations'
   import { fly, slide } from 'svelte/transition'
   import { expoInOut, expoOut } from 'svelte/easing'
   import FormattedNumber from '$lib/components/util/FormattedNumber.svelte'
+  import type { ClassValue } from 'svelte/elements'
 
-  export let node: CommentNodeI
-  export let postId: number
-  export let op: boolean = false
+  interface Props {
+    node: CommentNodeI
+    postId: number
+    op?: boolean
+    actions?: boolean
+    meta?: boolean
+    open?: boolean
+    replying?: boolean
+    contentClass?: ClassValue
+    class?: ClassValue
+    metaSuffix?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+  }
 
-  export let actions: boolean = true
-  export let meta: boolean = true
+  let {
+    node = $bindable(),
+    postId,
+    op = false,
+    actions = true,
+    meta = true,
+    replying = $bindable(false),
+    contentClass = '',
+    class: clazz = '',
+    metaSuffix,
+    children,
+    open = $bindable(true),
+  }: Props = $props()
 
-  export let open = true
+  // TODO this kinda sucks because you cant bind:, but we need to save the open state for the virtualizer
+  $effect(() => {
+    node.expanded = open
+  })
 
-  export let replying = false
-
-  let editing = false
-  let newComment = node.comment_view.comment.content
-
-  let editingLoad = false
+  let editing = $state(false)
+  let newComment = $state(node.comment_view.comment.content)
+  let editingLoad = $state(false)
 
   async function save() {
-    if (!$profile?.jwt || newComment.length <= 0) return
+    if (!profile.data?.jwt || newComment.length <= 0) return
 
     editingLoad = true
 
@@ -62,8 +81,7 @@
       editing = false
     } catch (err) {
       toast({
-        // @ts-ignore i hate this
-        content: err,
+        content: err as any,
         type: 'error',
       })
     }
@@ -72,7 +90,7 @@
   }
 
   onMount(() => {
-    if ('#' + node.comment_view.comment.id.toString() == $page.url.hash) {
+    if ('#' + node.comment_view.comment.id.toString() == page.url.hash) {
       highlight = 'text-primary-900 dark:text-primary-100 font-medium'
 
       setTimeout(() => (highlight = 'duration-[3s] transition-all'), 500)
@@ -80,19 +98,27 @@
     }
   })
 
-  let highlight = ''
+  let highlight = $state('')
 </script>
 
 {#if editing}
   <Modal bind:open={editing}>
-    <span slot="title">{$t('form.edit')}</span>
-    <form on:submit|preventDefault={save} class="contents">
+    {#snippet customTitle()}
+      <span>{$t('form.edit')}</span>
+    {/snippet}
+    <form
+      onsubmit={(e) => {
+        e.preventDefault()
+        save()
+      }}
+      class="contents"
+    >
       <CommentForm
         postId={node.comment_view.comment.id}
-        bind:value={newComment}
+        value={newComment}
         actions={false}
         preview={true}
-        on:confirm={save}
+        onconfirm={save}
       />
       <Button
         submit
@@ -111,16 +137,16 @@
 <li
   class="py-3 relative {node.comment_view.comment.distinguished
     ? ' text-primary-900 dark:text-primary-100'
-    : ''} {highlight} {$$props.class}"
+    : ''} {highlight} {clazz}"
   id={node.comment_view.comment.id.toString()}
 >
   {#if meta}
     <button
-      on:click={() => (open = !open)}
+      onclick={() => (open = !open)}
       class="flex flex-row cursor-pointer gap-2 items-center group text-[13px] flex-wrap w-full
     z-0 group relative"
     >
-      <slot name="meta-suffix" />
+      {@render metaSuffix?.()}
       <div
         class="absolute opacity-0 -z-10 inset-0 group-hover:block group-hover:opacity-100
       bg-slate-100 dark:bg-zinc-900 group-hover:-inset-1 group-hover:-inset-x-2 rounded-full transition-all
@@ -146,18 +172,18 @@
       <span class:font-bold={op} class="flex flex-row gap-1 items-center">
         <UserLink
           inComment
-          avatarSize={24}
+          avatarSize={20}
           avatar
           user={node.comment_view.creator}
         >
-          <svelte:fragment slot="badges">
+          {#snippet extraBadges()}
             {#if node.comment_view.creator_is_moderator}
               <ShieldIcon filled width={14} class="text-green-500" />
             {/if}
             {#if node.comment_view.creator_is_admin}
               <ShieldIcon filled width={14} class="text-red-500" />
             {/if}
-          </svelte:fragment>
+          {/snippet}
         </UserLink>
         {#if op}
           <Icon mini size="16" src={Microphone} class="text-sky-600" />
@@ -194,7 +220,7 @@
   {/if}
   {#if open}
     <div
-      class="relative {$$props.contentClass}"
+      class="relative {contentClass}"
       transition:slide={{ duration: 400, easing: expoOut }}
     >
       <div
@@ -205,7 +231,7 @@
           <div
             class="-z-10 bg-slate-100 dark:bg-zinc-900 absolute -top-9 -bottom-1.5
           -inset-x-6 -right-6"
-          />
+          ></div>
         {/if}
         <div
           class="max-w-full mt-0.5 break-words text-[15px] text-slate-800 dark:text-zinc-100"
@@ -214,9 +240,9 @@
         </div>
         {#if actions}
           <CommentActions
-            bind:comment={node.comment_view}
+            comment={node.comment_view}
             bind:replying
-            on:edit={() => (editing = true)}
+            onedit={() => (editing = true)}
             disabled={node.comment_view.banned_from_community ||
               node.comment_view.post.locked}
           />
@@ -232,25 +258,25 @@
               label={$t('comment.reply')}
               {postId}
               parentId={node.comment_view.comment.id}
-              on:comment={(e) => {
+              oncomment={(e) => {
                 node.children = [
                   {
                     children: [],
-                    comment_view: e.detail.comment_view,
+                    comment_view: e.comment_view,
                     depth: node.depth + 1,
-                    ui: {},
+                    expanded: true,
                   },
                   ...node.children,
                 ]
                 replying = false
               }}
-              on:cancel={() => (replying = false)}
+              oncancel={() => (replying = false)}
             />
           </div>
         </div>
       {/if}
       <div class="bg-transparent dark:bg-transparent">
-        <slot />
+        {@render children?.()}
       </div>
     </div>
   {/if}

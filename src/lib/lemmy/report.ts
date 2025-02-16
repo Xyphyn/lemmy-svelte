@@ -37,7 +37,7 @@ interface BaseReport {
 }
 
 export const generalizeCommentReport = (
-  report: CommentReportView
+  report: CommentReportView,
 ): ReportView => ({
   creator: report.creator,
   item: {
@@ -77,7 +77,7 @@ export const generalizePostReport = (report: PostReportView): ReportView => ({
 })
 
 export const generalizePrivateMessageReport = (
-  report: PrivateMessageReportView
+  report: PrivateMessageReportView,
 ): ReportView => ({
   creator: report.creator,
   item: report.private_message,

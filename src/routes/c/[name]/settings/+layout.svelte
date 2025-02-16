@@ -1,19 +1,26 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import MultiSelect from '$lib/components/input/Switch.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
   import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { t } from '$lib/translations.js'
-  import { fullCommunityName } from '$lib/util.js'
+  import { fullCommunityName } from '$lib/util.svelte.js'
   import type { PageData } from './$types.js'
 
-  export let data: PageData
+  interface Props {
+    data: PageData
+    children?: import('svelte').Snippet
+  }
 
-  $: communityUrl = `/c/${fullCommunityName(
-    data.community.community_view.community.name,
-    data.community.community_view.community.actor_id
-  )}`
+  let { data, children }: Props = $props()
+
+  let communityUrl = $derived(
+    `/c/${fullCommunityName(
+      data.community.community_view.community.name,
+      data.community.community_view.community.actor_id,
+    )}`,
+  )
 </script>
 
 <div class="flex flex-col gap-4 h-full">
@@ -34,5 +41,5 @@
       ]}
     ></Tabs>
   </div>
-  <slot />
+  {@render children?.()}
 </div>

@@ -1,22 +1,29 @@
 <script lang="ts">
-  import { site, validateInstance } from '$lib/lemmy.js'
+  import { preventDefault } from 'svelte/legacy'
+
+  import { site, validateInstance } from '$lib/lemmy.svelte.js'
   import { Button, Note, TextInput, toast } from 'mono-svelte'
   import { MINIMUM_VERSION } from '$lib/version'
-  import { mayBeIncompatible } from '$lib/lemmy'
-  import { DOMAIN_REGEX_FORMS } from '$lib/util'
-  import { profile, profileData, type Profile } from '$lib/auth'
-  import { LINKED_INSTANCE_URL } from '$lib/instance'
+  import { mayBeIncompatible } from '$lib/lemmy.svelte'
+  import { DOMAIN_REGEX_FORMS } from '$lib/util.svelte'
+  import { profile, profileData, type Profile } from '$lib/auth.svelte'
+  import { LINKED_INSTANCE_URL } from '$lib/instance.svelte'
   import { goto } from '$app/navigation'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let ref: string = '/'
-
-  let form = {
-    instance: '',
-    username: `${$t('account.guest')} ${$profileData.profiles.filter((p) => p.jwt == undefined).length + 1}`,
-    loading: false,
+  interface Props {
+    ref?: string
+    children?: import('svelte').Snippet
   }
+
+  let { ref = '/', children }: Props = $props()
+
+  let form = $state({
+    instance: '',
+    username: `${$t('account.guest')} ${profileData.profiles.filter((p) => p.jwt == undefined).length + 1}`,
+    loading: false,
+  })
 
   async function addGuest() {
     form.loading = true
@@ -26,21 +33,13 @@
       return
     }
 
-    profileData.update((pd) => {
-      // too lazy to make a decent system
-      const id = Math.floor(Math.random() * 100000)
-
-      const newProfile: Profile = {
-        id: id,
-        instance: form.instance,
-        username: form.username,
-      }
-
-      return {
-        profile: id,
-        profiles: [...pd.profiles, newProfile],
-      }
+    const id = Math.max(...profileData.profiles.map((i) => i.id)) + 1
+    profileData.profiles.push({
+      id: id,
+      instance: form.instance,
+      username: form.username,
     })
+    profileData.profile = id
 
     toast({ content: $t('toast.addAccount'), type: 'success' })
 
@@ -51,11 +50,11 @@
 </script>
 
 <div class="max-w-xl w-full mx-auto h-max my-auto">
-  <form on:submit|preventDefault={addGuest} class="flex flex-col gap-5">
+  <form onsubmit={preventDefault(addGuest)} class="flex flex-col gap-5">
     <div class="flex flex-col gap-2">
-      <slot />
+      {@render children?.()}
       <Header>{$t('account.addGuest')}</Header>
-      {#if $site && mayBeIncompatible(MINIMUM_VERSION, $site.version.replace('v', ''))}
+      {#if site.data && mayBeIncompatible(MINIMUM_VERSION, site.data.version.replace('v', ''))}
         <Note>
           {$t('account.versionGate', {
             //@ts-ignore

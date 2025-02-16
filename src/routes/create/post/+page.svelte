@@ -1,18 +1,16 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
   import PostForm from '$lib/components/lemmy/post/form/PostForm.svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { onDestroy, onMount } from 'svelte'
   import { getSessionStorage, setSessionStorage } from '$lib/session.js'
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data = {
-    crosspost: false,
-  }
+  let { data } = $props()
 
   onMount(() => {
-    if (!$profile?.jwt) {
+    if (!profile.data?.jwt) {
       goto('/login')
     }
   })
@@ -25,7 +23,7 @@
     setSessionStorage('lastSeenCommunity', undefined)
   })
 
-  let draft = getSessionStorage('postDraft') as any
+  let post = getSessionStorage('postDraft') as any
 </script>
 
 <svelte:head>
@@ -34,8 +32,8 @@
 
 <div class="w-full max-w-5xl mx-auto h-full">
   <PostForm
-    data={data.crosspost == true
-      ? draft
+    passedData={data.crosspost == true
+      ? post
       : {
           body: '',
           community: null,
@@ -46,10 +44,12 @@
           url: undefined,
         }}
     passedCommunity={community}
-    on:submit={(e) => goto(`/post/${e.detail.post.id}`)}
+    onsubmit={(e) => goto(`/post/${e.post.id}`)}
   >
-    <Header class="text-3xl font-bold" slot="formtitle" pageHeader>
-      {$t('routes.createPost')}
-    </Header>
+    {#snippet formtitle()}
+      <Header class="text-3xl font-bold" pageHeader>
+        {$t('routes.createPost')}
+      </Header>
+    {/snippet}
   </PostForm>
 </div>

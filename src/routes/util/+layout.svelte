@@ -1,9 +1,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import MultiSelect from '$lib/components/input/Switch.svelte'
   import Tabs from '$lib/components/ui/layout/pages/Tabs.svelte'
   import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
+  interface Props {
+    children?: import('svelte').Snippet
+  }
+
+  let { children }: Props = $props()
 </script>
 
 <div class="flex flex-col gap-2">
@@ -39,8 +44,8 @@
         },
       ]}
       class="overflow-auto"
-      currentRoute={$page.url.toString()}
+      currentRoute={page.url.toString()}
     />
   </div>
-  <slot />
+  {@render children?.()}
 </div>

@@ -1,24 +1,38 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import Label from '../forms/Label.svelte'
   import { generateID } from '../forms/helper.js'
   import { DocumentPlus, Icon } from 'svelte-hero-icons'
   import TextInput from './TextInput.svelte'
 
-  export let accept = 'image/*'
-  export let files: FileList | undefined | null = null
-  export let label: string | undefined = undefined
-  export let id: string = generateID()
-  export let url: string | undefined = undefined
+  interface Props {
+    accept?: string
+    files?: FileList | undefined | null
+    label?: string | undefined
+    id?: string
+    url?: string | undefined
+    customLabel?: import('svelte').Snippet
+  }
 
-  let dragover = false
+  let {
+    accept = 'image/*',
+    files = $bindable(),
+    label = undefined,
+    id = generateID(),
+    url = undefined,
+    customLabel,
+  }: Props = $props()
 
-  $: previewURL = files ? URL.createObjectURL(files[0]) : undefined
+  let dragover = $state(false)
+
+  let previewURL = $derived(files ? URL.createObjectURL(files[0]) : undefined)
 </script>
 
 <div class="flex flex-col">
-  {#if $$slots.label || label}
+  {#if customLabel || label}
     <Label for={id} text={label} class="mb-1">
-      <slot name="label" />
+      {@render customLabel?.()}
     </Label>
   {/if}
   <label
@@ -29,20 +43,28 @@
       : ''}
   {url != undefined ? 'rounded-b-none' : ''}
   "
-    on:drop|preventDefault={(event) => (files = event.dataTransfer?.files)}
-    on:dragover|preventDefault={(event) => {
+    ondrop={(event) => {
+      event.preventDefault()
+      files = event.dataTransfer?.files ?? null
+    }}
+    ondragover={(event) => {
+      event.preventDefault()
+
       if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'copy'
         dragover = true
       }
     }}
-    on:dragleave|preventDefault={() => (dragover = false)}
+    ondragleave={(e) => {
+      e.preventDefault()
+      dragover = false
+    }}
   >
     {#if files}
-      <!-- svelte-ignore a11y-missing-attribute -->
+      <!-- svelte-ignore a11y_missing_attribute -->
       <img
         src={previewURL}
-        on:load={() => {
+        onload={() => {
           if (previewURL) URL.revokeObjectURL(previewURL)
         }}
         class="w-full max-w-sm h-full rounded-lg"

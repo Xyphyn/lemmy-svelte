@@ -37,7 +37,7 @@ export const linkify = markedLinkifyIt(
 
         if (!self.re.community) {
           self.re.community = new RegExp(
-            /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z]{2,63})/i
+            /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z]{2,63})/i,
           )
         }
         if (self.re.community.test(tail)) {
@@ -63,7 +63,7 @@ export const linkify = markedLinkifyIt(
 
         if (!self.re.user) {
           self.re.user = new RegExp(
-            /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z]{2,63})/i
+            /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z]{2,63})/i,
           )
         }
         if (self.re.user.test(tail)) {
@@ -86,7 +86,7 @@ export const linkify = markedLinkifyIt(
   },
   {
     fuzzyEmail: false,
-  }
+  },
 )
 
 const regexes = {

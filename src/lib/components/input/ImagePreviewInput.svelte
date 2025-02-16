@@ -1,21 +1,30 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { DocumentPlus, Icon } from 'svelte-hero-icons'
   import { Label, TextInput } from 'mono-svelte'
 
-  export let accept = 'image/*'
-  export let files: FileList | undefined | null = null
-  export let label: string | undefined = undefined
-  export let url: string | undefined = undefined
+  interface Props {
+    accept?: string
+    files?: FileList | undefined | null
+    label?: string | undefined
+    url?: string | undefined
+  }
 
-  let dragover = false
+  let {
+    accept = 'image/*',
+    files = $bindable(null),
+    label = undefined,
+    url = undefined,
+  }: Props = $props()
 
-  $: previewURL = files ? URL.createObjectURL(files[0]) : undefined
+  let dragover = $state(false)
+
+  let previewURL = $derived(files ? URL.createObjectURL(files[0]) : undefined)
 </script>
 
 <div class="flex flex-col">
-  <Label text={label} class="mb-1">
-    <slot name="label" />
-  </Label>
+  <Label text={label} class="mb-1" />
   <label
     class="flex flex-col items-center px-8 py-4 mx-auto w-full rounded-xl
   border border-slate-200 dark:border-zinc-800 bg-white dark:bg-black
@@ -24,20 +33,20 @@
       : ''}
   {url != undefined ? 'rounded-b-none' : ''}
   "
-    on:drop|preventDefault={(event) => (files = event.dataTransfer?.files)}
-    on:dragover|preventDefault={(event) => {
+    ondrop={preventDefault((event) => (files = event.dataTransfer?.files))}
+    ondragover={preventDefault((event) => {
       if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'copy'
         dragover = true
       }
-    }}
-    on:dragleave|preventDefault={() => (dragover = false)}
+    })}
+    ondragleave={preventDefault(() => (dragover = false))}
   >
     {#if files}
-      <!-- svelte-ignore a11y-missing-attribute -->
+      <!-- svelte-ignore a11y_missing_attribute -->
       <img
         src={previewURL}
-        on:load={() => {
+        onload={() => {
           if (previewURL) URL.revokeObjectURL(previewURL)
         }}
         class="w-full max-w-sm h-full rounded-lg"

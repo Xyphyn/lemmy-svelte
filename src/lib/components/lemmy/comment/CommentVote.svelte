@@ -7,9 +7,9 @@
     ChevronUp,
     Icon,
   } from 'svelte-hero-icons'
-  import { getClient, site } from '$lib/lemmy'
-  import { userSettings } from '$lib/settings'
-  import { profile } from '$lib/auth.js'
+  import { getClient, site } from '$lib/lemmy.svelte'
+  import { settings } from '$lib/settings.svelte'
+  import { profile } from '$lib/auth.svelte.js'
   import FormattedNumber from '$lib/components/util/FormattedNumber.svelte'
   import { Button, buttonColor, toast } from 'mono-svelte'
   import { vote as voteItem } from '$lib/lemmy/contentview'
@@ -18,13 +18,22 @@
   import { backOut } from 'svelte/easing'
   import { t } from '$lib/translations'
 
-  export let vote: number = 0
-  export let upvotes: number
-  export let downvotes: number
-  export let commentId: number
+  interface Props {
+    vote?: number
+    upvotes: number
+    downvotes: number
+    commentId: number
+  }
+
+  let {
+    vote = $bindable(0),
+    upvotes = $bindable(),
+    downvotes = $bindable(),
+    commentId,
+  }: Props = $props()
 
   const castVote = async (newVote: number) => {
-    if (!$profile?.jwt) {
+    if (!profile.data?.jwt) {
       toast({ content: $t('toast.loginVoteGate'), type: 'warning' })
       return
     }
@@ -39,10 +48,10 @@
 </script>
 
 <div
-  class="h-full flex items-center overflow-hidden {buttonColor.ghost} rounded-full hover:bg-transparent"
+  class="h-full flex items-center overflow-hidden {buttonColor.ghost} rounded-full hover:bg-transparent font-medium"
 >
   <button
-    on:click={() => castVote(vote == 1 ? 0 : 1)}
+    onclick={() => castVote(vote == 1 ? 0 : 1)}
     class="flex items-center gap-0.5 transition-colors px-1.5 h-full
       {vote == 1
       ? shouldShowVoteColor(vote, 'upvotes')
@@ -65,7 +74,7 @@
     class="border-l h-4 w-0 !p-0 border-slate-200 dark:border-zinc-800"
   ></div>
   <button
-    on:click={() => castVote(vote == -1 ? 0 : -1)}
+    onclick={() => castVote(vote == -1 ? 0 : -1)}
     class="flex flex-row-reverse items-center gap-0.5 h-full transition-colors border-0 px-1.5
       {vote == -1
       ? shouldShowVoteColor(vote, 'downvotes')

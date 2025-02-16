@@ -116,6 +116,4 @@ export const aliases = new Map([
   ['he-IL', 'he'],
 ])
 
-export const { t, locale, locales, loading, loadTranslations } = new i18n(
-  config
-)
+export let { t, locale, locales, loading, loadTranslations } = new i18n(config)

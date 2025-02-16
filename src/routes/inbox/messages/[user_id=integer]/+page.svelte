@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import { Button, Material, Spinner, TextInput, toast } from 'mono-svelte'
   import Message from './Message.svelte'
   import { t } from '$lib/translations'
@@ -6,7 +8,7 @@
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { fly } from 'svelte/transition'
   import { backOut, expoOut } from 'svelte/easing'
-  import { client } from '$lib/lemmy'
+  import { client } from '$lib/lemmy.svelte'
   import { errorMessage } from '$lib/lemmy/error'
   import type { PrivateMessageResponse } from 'lemmy-js-client'
   import { flip } from 'svelte/animate'
@@ -14,18 +16,23 @@
   import { onMount, tick } from 'svelte'
   import { report } from '$lib/components/lemmy/moderation/moderation'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
+  import Placeholder from 'mono-svelte/placeholder/Placeholder.svelte'
 
-  export let data
+  let { data: pageData } = $props()
+  let data = $state(pageData)
+  $effect(() => {
+    data = pageData
+  })
 
-  let textbox = {
+  let textbox = $state({
     message: '',
     loading: false,
-  }
+  })
 
-  let chatWindow: HTMLDivElement
+  let chatWindow = $state<HTMLDivElement>()
 
   async function sendMessage(
-    message: string
+    message: string,
   ): Promise<PrivateMessageResponse | undefined> {
     if (message == '') return
 
@@ -34,7 +41,7 @@
     try {
       const res = await client().createPrivateMessage({
         content: message,
-        recipient_id: data.creator,
+        recipient_id: data.creator.person_view.person.id,
       })
 
       textbox.loading = false
@@ -50,11 +57,16 @@
     textbox.loading = false
   }
 
-  $: if (browser && data.message && chatWindow) {
-    tick().then(() =>
-      chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' })
-    )
-  }
+  $effect(() => {
+    if (browser && data.message && chatWindow) {
+      tick().then(() =>
+        chatWindow?.scrollTo({
+          top: chatWindow.scrollHeight,
+          behavior: 'smooth',
+        }),
+      )
+    }
+  })
 
   async function deleteMessage(id: number) {
     const res = await client().deletePrivateMessage({
@@ -65,9 +77,9 @@
     data.message = {
       private_messages: data.message.private_messages.toSpliced(
         data.message.private_messages.findLastIndex(
-          (i) => i.private_message.id == id
+          (i) => i.private_message.id == id,
         ),
-        1
+        1,
       ),
     }
   }
@@ -75,6 +87,9 @@
 
 <Header pageHeader>
   {$t('filter.inbox.messages')}
+  {#snippet extended()}
+    <UserLink avatar user={data.creator.person_view.person} />
+  {/snippet}
 </Header>
 <Material
   color="transparent"
@@ -84,11 +99,21 @@
   w-full overflow-auto mt-6 relative max-h-[32rem] h-full"
 >
   <div class="h-full overflow-auto" bind:this={chatWindow}>
-    <ul id="chat-window" class="flex flex-col gap-1 flex-1 px-4 py-4">
-      <div class="mt-auto" />
+    <ul id="chat-window" class=" h-full flex flex-col gap-1 flex-1 px-4 py-4">
+      <div class="mt-auto"></div>
+      <p class="mx-auto mt-auto text-slate-400 dark:text-zinc-600">
+        {$t('routes.inbox.messages.conversation', {
+          // @ts-ignore
+          user:
+            data.creator.person_view.person.name +
+            '@' +
+            new URL(data.creator.person_view.person.actor_id).hostname,
+        })}
+      </p>
       {#each data.message.private_messages.toReversed() as private_message, index (private_message.private_message.id)}
         <div
-          class={private_message.creator.id == data.creator
+          class={private_message.creator.id ==
+          data.creator.person_view.person.id
             ? 'self-start'
             : 'self-end'}
           in:fly|global={{
@@ -100,10 +125,11 @@
           animate:flip={{ duration: 500, easing: expoOut }}
         >
           <Message
-            on:delete={() => deleteMessage(private_message.private_message.id)}
-            on:report={() => report(private_message)}
+            ondelete={() => deleteMessage(private_message.private_message.id)}
+            onreport={() => report(private_message)}
             message={private_message}
-            primary={private_message.creator.id != data.creator}
+            primary={private_message.creator.id !=
+              data.creator.person_view.person.id}
           />
         </div>
       {/each}
@@ -117,7 +143,9 @@
     border-slate-200 dark:border-zinc-800
    p-2 gap-2 backdrop-blur-xl
    bg-white/50 dark:bg-zinc-950/50 border rounded-2xl"
-      on:submit|preventDefault={async () => {
+      onsubmit={async (e) => {
+        e.preventDefault()
+
         const res = await sendMessage(textbox.message)
         if (!res) return
 
@@ -146,7 +174,9 @@
         loading={textbox.loading}
         disabled={textbox.loading}
       >
-        <Icon src={PaperAirplane} size="18" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={PaperAirplane} size="18" micro />
+        {/snippet}
       </Button>
     </form>
   </div>

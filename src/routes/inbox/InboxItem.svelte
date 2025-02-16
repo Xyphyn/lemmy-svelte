@@ -1,8 +1,8 @@
 <script lang="ts">
   import Comment from '$lib/components/lemmy/comment/Comment.svelte'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
-  import { getClient } from '$lib/lemmy.js'
-  import { notifications, profile } from '$lib/auth.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
+  import { notifications, profile } from '$lib/auth.svelte.js'
   import {
     ArrowUturnLeft,
     ArrowUturnUp,
@@ -28,14 +28,18 @@
   import CommentItem from '$lib/components/lemmy/comment/CommentItem.svelte'
   import Avatar from '$lib/components/ui/Avatar.svelte'
 
-  export let item: InboxItem
+  interface Props {
+    item: InboxItem
+  }
 
-  let replying = false
+  let { item = $bindable() }: Props = $props()
+
+  let replying = $state(false)
   let reply = ''
-  let loading = false
+  let loading = $state(false)
 
   async function markAsRead(isRead: boolean) {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     loading = true
 
@@ -63,7 +67,7 @@
     }
 
     item.read = isRead
-    if ($profile.user) $notifications.inbox += isRead ? -1 : 1
+    if (profile.data.user) $notifications.inbox += isRead ? -1 : 1
 
     loading = false
   }
@@ -74,68 +78,90 @@
 {/if}
 
 <Expandable open icon={false}>
-  <div class="flex flex-row gap-2 items-center w-full" slot="title">
-    <Avatar
-      url={item.creator.avatar}
-      circle={false}
-      width={28}
-      alt={item.creator.name}
-    />
-    <!-- <div class="rounded-full p-1 border border-slate-200 dark:border-zinc-800">
-      <Icon
-        src={item.type == 'comment_reply'
-          ? ChatBubbleOvalLeft
-          : item.type == 'private_message'
-            ? Envelope
-            : item.type == 'person_mention'
-              ? AtSymbol
-              : AtSymbol}
-        size="20"
-        mini
-        class="text-slate-600 dark:text-zinc-400"
+  {#snippet title()}
+    <div class="flex flex-row gap-2 items-center w-full">
+      <Avatar
+        url={item.creator.avatar}
+        circle={false}
+        width={28}
+        alt={item.creator.name}
       />
-    </div> -->
-    <div class="flex flex-col">
-      <div class="text-sm font-normal">
-        {#if item.type == 'comment_reply'}
-          {@html $t('routes.inbox.item.reply', {
-            // @ts-ignore
-            user: `<span class="font-medium">${item.creator.name}</span>`,
-            post: `<span class="font-medium">${item.item.post.name}</span>`,
-          })}
-        {:else if item.type == 'person_mention'}
-          {@html $t('routes.inbox.item.mention', {
-            // @ts-ignore
-            user: `<span class="font-medium">${item.creator.name}</span>`,
-            post: `<span class="font-medium">${item.item.post.name}</span>`,
-          })}
-        {:else if item.type == 'private_message'}
-          {@html $t('routes.inbox.item.message', {
-            // @ts-ignore
-            user: `<span class="font-medium">${item.item.creator.name}</span>`,
-            recipient: `<span class="font-medium">${item.item.recipient.name}</span>`,
-          })}
+      <div class="flex flex-col">
+        <div class="text-sm font-normal">
+          {#if item.type == 'comment_reply'}
+            {@html $t('routes.inbox.item.reply', {
+              // @ts-ignore
+              user: `<span class="font-medium">${item.creator.name}</span>`,
+              post: `<span class="font-medium">${item.item.post.name}</span>`,
+            })}
+          {:else if item.type == 'person_mention'}
+            {@html $t('routes.inbox.item.mention', {
+              // @ts-ignore
+              user: `<span class="font-medium">${item.creator.name}</span>`,
+              post: `<span class="font-medium">${item.item.post.name}</span>`,
+            })}
+          {:else if item.type == 'private_message'}
+            {@html $t('routes.inbox.item.message', {
+              // @ts-ignore
+              user: `<span class="font-medium">${item.item.creator.name}</span>`,
+              recipient: `<span class="font-medium">${item.item.recipient.name}</span>`,
+            })}
+          {/if}
+        </div>
+        <div class="text-xs text-slate-600 dark:text-zinc-400">
+          <RelativeDate date={publishedToDate(item.published)} />
+        </div>
+      </div>
+      <div class="flex-1"></div>
+      <div class="flex gap-2 max-md:hidden flex-shrink-0">
+        <Button
+          color={item.read ? 'secondary' : 'primary'}
+          {loading}
+          disabled={loading}
+          onclick={(e) => {
+            e.stopPropagation()
+            markAsRead(!item.read)
+          }}
+          size="sm"
+          rounding="pill"
+          class="flex-shrink-0"
+        >
+          {#snippet prefix()}
+            <Icon src={item.read ? EyeSlash : Eye} size="16" micro />
+          {/snippet}
+          {item.read
+            ? $t('post.actions.more.markUnread')
+            : $t('post.actions.more.markRead')}
+        </Button>
+        {#if item.type == 'comment_reply' || item.type == 'person_mention'}
+          <Button
+            href="/comment/{item.item.comment.id}"
+            size="sm"
+            rounding="pill"
+            class="flex-shrink-0"
+          >
+            {$t('common.jump')}
+          </Button>
         {/if}
       </div>
-      <div class="text-xs text-slate-600 dark:text-zinc-400">
-        <RelativeDate date={publishedToDate(item.published)} />
-      </div>
     </div>
-    <div class="flex-1" />
-    <div class="flex gap-2 max-md:hidden flex-shrink-0">
+  {/snippet}
+  {#snippet extended()}
+    <div class="flex gap-2 w-full md:hidden mt-1">
       <Button
         color={item.read ? 'secondary' : 'primary'}
         {loading}
         disabled={loading}
-        on:click={(e) => {
+        onclick={(e) => {
           e.stopPropagation()
           markAsRead(!item.read)
         }}
         size="sm"
         rounding="pill"
-        class="flex-shrink-0"
       >
-        <Icon src={item.read ? EyeSlash : Eye} size="16" micro slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={item.read ? EyeSlash : Eye} size="16" micro />
+        {/snippet}
         {item.read
           ? $t('post.actions.more.markUnread')
           : $t('post.actions.more.markRead')}
@@ -145,49 +171,26 @@
           href="/comment/{item.item.comment.id}"
           size="sm"
           rounding="pill"
-          class="flex-shrink-0"
         >
           {$t('common.jump')}
         </Button>
       {/if}
     </div>
-  </div>
-  <div slot="extended" class="flex gap-2 w-full md:hidden mt-1">
-    <Button
-      color={item.read ? 'secondary' : 'primary'}
-      {loading}
-      disabled={loading}
-      on:click={(e) => {
-        e.stopPropagation()
-        markAsRead(!item.read)
-      }}
-      size="sm"
-      rounding="pill"
-    >
-      <Icon src={item.read ? EyeSlash : Eye} size="16" micro slot="prefix" />
-      {item.read
-        ? $t('post.actions.more.markUnread')
-        : $t('post.actions.more.markRead')}
-    </Button>
-    {#if item.type == 'comment_reply' || item.type == 'person_mention'}
-      <Button href="/comment/{item.item.comment.id}" size="sm" rounding="pill">
-        {$t('common.jump')}
-      </Button>
-    {/if}
-  </div>
-  <svelte:fragment slot="content">
+  {/snippet}
+  {#snippet content()}
     {#if item.type == 'comment_reply' || item.type == 'person_mention'}
       <CommentItem
         comment={item.item}
         community={false}
         view="cozy"
         meta={false}
-        class="pt-0 pb-0"
+        commentClass="!pt-0 pb-0"
+        class="pt-0"
       />
     {:else}
       <PrivateMessage message={item.item} meta={false} />
     {/if}
-  </svelte:fragment>
+  {/snippet}
 </Expandable>
 
 <style>

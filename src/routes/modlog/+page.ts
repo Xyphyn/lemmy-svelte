@@ -1,6 +1,5 @@
-import { profile } from '$lib/auth.js'
 import { publishedToDate } from '$lib/components/util/date.js'
-import { getClient } from '$lib/lemmy.js'
+import { getClient } from '$lib/lemmy.svelte.js'
 import type {
   AdminPurgeCommentView,
   AdminPurgeCommunityView,
@@ -76,6 +75,9 @@ const timestamp = (when: string) => publishedToDate(when).getTime()
 
 export const _toModLog = (item: ModAction): ModLog => {
   if ('mod_ban_from_community' in item) {
+    const expires = item.mod_ban_from_community.expires
+      ? `until ${new Date(item.mod_ban_from_community.expires).toLocaleString()}`
+      : 'permanently'
     return {
       moderator: item.moderator,
       moderatee: item.banned_person,
@@ -83,7 +85,7 @@ export const _toModLog = (item: ModAction): ModLog => {
       actionName: item.mod_ban_from_community.banned
         ? 'banCommunity'
         : 'unbanCommunity',
-      reason: item.mod_ban_from_community.reason,
+      reason: `${item.mod_ban_from_community.reason ?? ''} (banned ${expires})`,
       timestamp: timestamp(item.mod_ban_from_community.when_),
     }
   } else if ('mod_remove_comment' in item) {
@@ -179,12 +181,16 @@ export const _toModLog = (item: ModAction): ModLog => {
       reason: item.admin_purge_person.reason,
     }
   } else if ('mod_ban' in item) {
+    const expires = item.mod_ban.expires
+      ? `until ${new Date(item.mod_ban.expires).toLocaleString()}`
+      : 'permanently'
+
     return {
       actionName: item.mod_ban.banned ? 'ban' : 'unban',
       timestamp: timestamp(item.mod_ban.when_),
       moderator: item.moderator,
       moderatee: item.banned_person,
-      reason: item.mod_ban.reason,
+      reason: `${item.mod_ban.reason ?? ''} (banned ${expires})`,
       link: `/u/${fullUserName(item.banned_person)}`,
     }
   } else if ('mod_add' in item) {
@@ -252,7 +258,7 @@ export async function load({ url }) {
     filters: {
       user: user ? moderationActions[0]?.moderatee?.name : undefined,
       community: community ? moderationActions[0]?.community?.title : undefined,
-      moderator: modId ? moderationActions[0]?.moderator?.name : undefined
-    }
+      moderator: modId ? moderationActions[0]?.moderator?.name : undefined,
+    },
   }
 }

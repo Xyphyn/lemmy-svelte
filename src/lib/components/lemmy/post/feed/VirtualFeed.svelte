@@ -1,50 +1,54 @@
 <script lang="ts">
-  import Post from '$lib/components/lemmy/post/Post.svelte'
-  import Placeholder from '$lib/components/ui/Placeholder.svelte'
-  import { userSettings } from '$lib/settings.js'
-  import type {
-    GetPostsResponse,
-    ListingType,
-    PostView,
-    SortType,
-  } from 'lemmy-js-client'
-  import { Badge, Button } from 'mono-svelte'
-  import {
-    ArchiveBox,
-    ChevronDoubleUp,
-    ExclamationTriangle,
-    Icon,
-    Minus,
-    Plus,
-  } from 'svelte-hero-icons'
-  import { expoOut } from 'svelte/easing'
-  import { fly, slide } from 'svelte/transition'
+  import { run } from 'svelte/legacy'
+
   import { browser } from '$app/environment'
-  import { afterUpdate, onMount, tick, type SvelteComponent } from 'svelte'
-  import {
-    createVirtualizer,
-    createWindowVirtualizer,
-    type SvelteVirtualizer,
-  } from '@tanstack/svelte-virtual'
-  import { afterNavigate, beforeNavigate } from '$app/navigation'
-  import { combineCrossposts } from './crosspost'
-  import { client } from '$lib/lemmy'
+  import { afterNavigate } from '$app/navigation'
+  import Post from '$lib/components/lemmy/post/Post.svelte'
+  import EndPlaceholder from '$lib/components/ui/EndPlaceholder.svelte'
+  import Placeholder from '$lib/components/ui/Placeholder.svelte'
+  import { client } from '$lib/lemmy.svelte'
   import {
     postFeeds,
     type PostFeed,
     type PostFeedID,
   } from '$lib/lemmy/postfeed'
+  import { settings } from '$lib/settings.svelte.js'
   import { t } from '$lib/translations'
+  import { createWindowVirtualizer } from '@tanstack/svelte-virtual'
+  import type { PostView } from 'lemmy-js-client'
+  import { Button } from 'mono-svelte'
+  import { onMount } from 'svelte'
+  import {
+    ArchiveBox,
+    ChevronDoubleUp,
+    ExclamationTriangle,
+    Icon,
+    Plus,
+  } from 'svelte-hero-icons'
   import InfiniteScroll from 'svelte-infinite-scroll'
-  import type { Readable } from 'svelte/motion'
-  import EndPlaceholder from '$lib/components/ui/EndPlaceholder.svelte'
 
-  export let posts: PostView[]
-  export let community: boolean = false
-  export let feedId: PostFeedID
+  let virtualItemEls: HTMLElement[] = $state([])
+  let virtualListEl: HTMLElement | undefined = $state(undefined)
 
-  let virtualItemEls: HTMLElement[] = []
-  let virtualListEl: HTMLElement | undefined = undefined
+  afterNavigate(() => {
+    $virtualizer.scrollToIndex($postFeeds[feedId]?.lastSeen ?? 0)
+  })
+
+  interface Props {
+    posts: PostView[]
+    community?: boolean
+    feedId: PostFeedID
+    feedData: PostFeed['data']
+    children?: import('svelte').Snippet
+  }
+
+  let {
+    posts = $bindable(),
+    community = false,
+    feedId,
+    feedData = $bindable(),
+    children,
+  }: Props = $props()
 
   const virtualizer = createWindowVirtualizer({
     count: posts.length,
@@ -55,27 +59,9 @@
     },
   })
 
-  $: items = $virtualizer.getVirtualItems()
-
-  $: if (virtualItemEls.length) {
-    virtualItemEls.forEach($virtualizer.measureElement)
-  }
-
-  $: if (posts.length && virtualListEl)
-    $virtualizer.setOptions({
-      scrollMargin: virtualListEl?.offsetTop,
-      count: posts.length,
-    })
-
-  afterNavigate(() => {
-    $virtualizer.scrollToIndex($postFeeds[feedId]?.lastSeen ?? 0)
-  })
-
-  export let feedData: PostFeed['data']
-
-  let error: any = undefined
-  let loading = false
-  let hasMore = true
+  let error: any = $state(undefined)
+  let loading = $state(false)
+  let hasMore = $state(true)
 
   async function loadMore() {
     if (!hasMore || loading) return
@@ -177,78 +163,85 @@
     }
   })
 
-  onMount(async () => {
-    await tick()
-    $virtualizer.measure()
+  let items = $derived($virtualizer.getVirtualItems())
+  $effect(() => {
+    if (virtualItemEls.length)
+      virtualItemEls.forEach($virtualizer.measureElement)
+  })
+  $effect(() => {
+    if (posts.length && virtualListEl)
+      $virtualizer.setOptions({
+        scrollMargin: virtualListEl?.offsetTop,
+        count: posts.length,
+      })
   })
 </script>
 
-<!-- <svelte:window on:keydown={handleKeydown} /> -->
-
 <ul
-  class="flex flex-col list-none {$userSettings.view == 'card'
-    ? 'gap-3 md:gap-4'
-    : 'divide-y'} divide-slate-200 dark:divide-zinc-800"
+  class="flex flex-col list-none divide-y divide-slate-200 dark:divide-zinc-800"
 >
-  {#if posts?.length == 0}
-    <div class="h-full grid place-items-center">
-      <Placeholder
-        icon={ArchiveBox}
-        title="No posts"
-        description="There are no posts that match this filter."
-      >
-        <Button href="/communities">
-          <Icon src={Plus} size="16" mini slot="prefix" />
-          <span>Follow some communities</span>
-        </Button>
-      </Placeholder>
-    </div>
-  {:else}
-    <div
-      style="position:relative; height: {browser
-        ? `${$virtualizer.getTotalSize()}px`
-        : '100%'}; width: 100%;"
-      bind:this={virtualListEl}
-    >
-      <div
-        style="position: absolute; top: 0; left: 0; width: 100%; transform: translateY({items?.[0]
-          ? items?.[0]?.start - $virtualizer.options.scrollMargin
-          : 0}px);"
-        class="divide-y divide-slate-200 dark:divide-zinc-900"
-        id="feed"
-      >
-        {#each items as row, index (posts[row.index]?.post.id)}
-          {#if posts[row.index]}
-            {@const post = posts?.[row.index]}
-            <li
-              bind:this={virtualItemEls[index]}
-              data-index={row.index}
-              style={row.index < 7 ? `--anim-delay: ${index * 100}ms` : ''}
-              class="relative post-container {row.index < 7
-                ? 'pop-in opacity-0'
-                : ''} -mx-4 sm:-mx-6 px-4 sm:px-6"
-            >
-              <Post
-                hideCommunity={community}
-                view={(posts[row.index]?.post.featured_community ||
-                  posts[row.index]?.post.featured_local) &&
-                $userSettings.posts.compactFeatured
-                  ? 'compact'
-                  : $userSettings.view}
-                {post}
-                class="transition-all duration-250"
-                on:hide={() => {
-                  posts = posts.toSpliced(row.index, 1)
-                }}
-              ></Post>
-            </li>
-          {/if}
-        {/each}
+  {#key posts}
+    {#if posts?.length == 0}
+      <div class="h-full grid place-items-center">
+        <Placeholder
+          icon={ArchiveBox}
+          title="No posts"
+          description="There are no posts that match this filter."
+        >
+          <Button href="/communities">
+            {#snippet prefix()}
+              <Icon src={Plus} size="16" mini />
+            {/snippet}
+            <span>Follow some communities</span>
+          </Button>
+        </Placeholder>
       </div>
-    </div>
-  {/if}
+    {:else}
+      <div
+        style="position:relative; height: {browser
+          ? `${$virtualizer?.getTotalSize()}px`
+          : '100%'}; width: 100%;"
+        bind:this={virtualListEl}
+      >
+        <div
+          style="position: absolute; top: 0; left: 0; width: 100%; transform: translateY({items?.[0]
+            ? items?.[0]?.start - $virtualizer.options.scrollMargin
+            : 0}px);"
+          class="divide-y divide-slate-200 dark:divide-zinc-900"
+          id="feed"
+        >
+          {#each items as row, index (posts[row.index]?.post.id)}
+            {#if posts[row.index]}
+              <li
+                bind:this={virtualItemEls[index]}
+                data-index={row.index}
+                style={row.index < 7 ? `--anim-delay: ${index * 100}ms` : ''}
+                class="relative post-container {row.index < 7
+                  ? 'pop-in opacity-0'
+                  : ''} -mx-4 sm:-mx-6 px-4 sm:px-6"
+              >
+                <Post
+                  bind:post={posts[row.index]}
+                  hideCommunity={community}
+                  view={(posts[row.index]?.post.featured_community ||
+                    posts[row.index]?.post.featured_local) &&
+                  settings.posts.compactFeatured
+                    ? 'compact'
+                    : settings.view}
+                  class="transition-all duration-250"
+                  onhide={() => {
+                    posts = posts.toSpliced(row.index, 1)
+                  }}
+                ></Post>
+              </li>
+            {/if}
+          {/each}
+        </div>
+      </div>
+    {/if}
+  {/key}
 
-  {#if $userSettings.infiniteScroll && browser}
+  {#if settings.infiniteScroll && browser}
     {#if error}
       <div
         class="flex flex-col justify-center items-center
@@ -263,18 +256,20 @@
           color="primary"
           {loading}
           disabled={loading}
-          on:click={() => loadMore()}
+          onclick={() => loadMore()}
         >
           {$t('message.retry')}
         </Button>
       </div>
     {:else if hasMore}
-      <div class="w-full flex flex-col skeleton gap-2 animate-pulse pt-6">
-        <div class="w-96 max-w-full h-8"></div>
-        <div class="w-full h-48"></div>
+      <div class="w-full flex flex-col gap-2 animate-pulse pt-6">
+        <div
+          class="w-96 max-w-full h-8 bg-slate-100 dark:bg-zinc-800 rounded-md"
+        ></div>
+        <div class="w-full h-48 bg-slate-100 dark:bg-zinc-800 rounded-md"></div>
         <div class="!bg-transparent h-8 flex justify-between">
-          <div class="w-48 h-8"></div>
-          <div class="w-24 h-8"></div>
+          <div class="w-48 h-8 bg-slate-100 dark:bg-zinc-800 rounded-md"></div>
+          <div class="w-24 h-8 bg-slate-100 dark:bg-zinc-800 rounded-md"></div>
         </div>
       </div>
     {:else}
@@ -284,23 +279,23 @@
             // @ts-ignore
             community_name: feedData.community_name ?? 'undefined',
           })}
-          <Button slot="action" color="tertiary">
-            <Icon src={ChevronDoubleUp} size="16" micro slot="prefix" />
-            {$t('routes.post.scrollToTop')}
-          </Button>
+          {#snippet action()}
+            <Button color="tertiary">
+              {#snippet prefix()}
+                <Icon src={ChevronDoubleUp} size="16" micro />
+              {/snippet}
+              {$t('routes.post.scrollToTop')}
+            </Button>
+          {/snippet}
         </EndPlaceholder>
       </div>
     {/if}
     <InfiniteScroll window threshold={1000} on:loadMore={loadMore} />
   {/if}
-  <slot />
+  {@render children?.()}
 </ul>
 
 <style lang="postcss">
-  .skeleton * {
-    @apply bg-slate-100 dark:bg-zinc-800 rounded-md;
-  }
-
   @keyframes popIn {
     from {
       transform: translateY(24px);

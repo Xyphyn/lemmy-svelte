@@ -13,7 +13,11 @@
   } from 'svelte-hero-icons'
   import { fly } from 'svelte/transition'
 
-  export let toast: Toast
+  interface Props {
+    toast: Toast
+  }
+
+  let { toast }: Props = $props()
 </script>
 
 <div
@@ -56,7 +60,7 @@
   <div class="ml-auto flex items-center gap-1 m-2">
     {#if toast.action}
       <button
-        on:click={() => {
+        onclick={() => {
           toast.action?.()
           toasts.update((toasts) => toasts.filter((t) => t.id != toast.id))
         }}
@@ -66,7 +70,7 @@
       </button>
     {/if}
     <button
-      on:click={() => {
+      onclick={() => {
         toasts.update((toasts) => toasts.filter((t) => t.id != toast.id))
       }}
       class="rounded-lg w-max transition-colors hover:bg-black/20 hover:dark:bg-white/20 p-2"

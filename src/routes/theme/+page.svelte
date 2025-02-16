@@ -21,25 +21,25 @@
   import ColorSwatch from './ColorSwatch.svelte'
   import { t } from '$lib/translations'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
-  import { calculateVars, hexToRgb, theme, themeData } from '$lib/ui/colors'
+  import { theme as themeData } from '$lib/ui/colors.svelte'
   import { getDefaultColors } from '$lib/ui/presets'
   import ThemePreset from './ThemePreset.svelte'
 
-  let importing = false
-  let importText = ''
+  let importing = $state(false)
+  let importText = $state('')
 
-  $: defaultColors = getDefaultColors()
+  let defaultColors = $derived(getDefaultColors())
 </script>
 
 {#if importing}
   <Modal
     bind:open={importing}
-    on:action={() => {
+    onaction={() => {
       try {
         if (importText == '') {
           throw new Error('Import is empty')
         }
-        $theme.colors = JSON.parse(importText)
+        themeData.current.colors = JSON.parse(importText)
         toast({ content: $t('message.success'), type: 'success' })
         importing = false
       } catch (err) {
@@ -70,20 +70,20 @@
       class="grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 @3xl:grid-cols-4
     gap-2"
     >
-      {#each $themeData.themes as theme}
-        <ThemePreset bind:theme />
+      {#each themeData.data.themes as theme, index}
+        <ThemePreset bind:theme={themeData.data.themes[index]} />
       {/each}
       <button
-        on:click={() => {
+        onclick={() => {
           const newTheme = {
-            id: Math.max(...$themeData.themes.map((t) => t.id)) + 1,
+            id: Math.max(...themeData.data.themes.map((t) => t.id)) + 1,
             colors: getDefaultColors(),
             name: $t('routes.theme.preset.new'),
           }
 
-          $themeData.themes = [...$themeData.themes, newTheme]
+          themeData.data.themes = [...themeData.data.themes, newTheme]
 
-          $themeData.currentTheme = newTheme.id
+          themeData.data.currentTheme = newTheme.id
         }}
       >
         <Material
@@ -101,18 +101,18 @@
   </Material>
   <div class="flex items-center gap-4">
     <Button
-      on:click={() => {
+      onclick={() => {
         importing = !importing
       }}
       size="lg"
-      disabled={$theme.id <= 0}
+      disabled={themeData.current.id <= 0}
     >
       <Icon src={ArrowUpTray} size="16" mini />
       {$t('routes.theme.import')}
     </Button>
     <Button
-      on:click={() => {
-        navigator.clipboard.writeText(JSON.stringify($theme.colors))
+      onclick={() => {
+        navigator.clipboard.writeText(JSON.stringify(themeData.current.colors))
         toast({ content: 'Copied theme to clipboard.' })
       }}
       size="lg"
@@ -121,8 +121,8 @@
       {$t('routes.theme.export')}
     </Button>
     <Button
-      disabled={$theme.id <= 0}
-      on:click={() => {
+      disabled={themeData.current.id <= 0}
+      onclick={() => {
         modal({
           actions: [
             action({
@@ -131,7 +131,12 @@
             }),
             action({
               action: () => {
-                $theme.colors = { other: {}, primary: {}, zinc: {}, slate: {} }
+                themeData.current.colors = {
+                  other: {},
+                  primary: {},
+                  zinc: {},
+                  slate: {},
+                }
               },
               content: $t('routes.theme.reset'),
               close: true,
@@ -148,15 +153,15 @@
       {$t('routes.theme.reset')}
     </Button>
   </div>
-  {#if $theme.id <= 0}
+  {#if themeData.current.id <= 0}
     <Note>
       {$t('routes.theme.preset.description')}
     </Note>
   {/if}
   <div
     class="relative"
-    class:opacity-50={$theme.id <= 0}
-    class:pointer-events-none={$theme.id <= 0}
+    class:opacity-50={themeData.current.id <= 0}
+    class:pointer-events-none={themeData.current.id <= 0}
   >
     <Material
       color="transparent"
@@ -164,14 +169,13 @@
     >
       <h1 class="text-2xl font-bold col-span-2">{$t('routes.theme.accent')}</h1>
       <ColorSwatch
-        value={$theme.colors.primary?.[900]}
-        on:change={(e) => {
-          $theme.colors.primary[900] = e.detail
+        value={themeData.current.colors.primary?.[900]}
+        onchange={(e) => {
+          themeData.current.colors.primary[900] = e
         }}
-        backgroundColor={defaultColors.primary[900]}
-        on:contextmenu={(e) => {
+        oncontextmenu={(e) => {
           e.preventDefault()
-          $theme.colors.primary[900] =
+          themeData.current.colors.primary[900] =
             // @ts-ignore
             defaultColors.primary[900]
 
@@ -180,14 +184,13 @@
         class="!w-12 !h-12 col-span-1"
       />
       <ColorSwatch
-        value={$theme.colors.primary?.[100]}
-        on:change={(e) => {
-          $theme.colors.primary[100] = e.detail
+        value={themeData.current.colors.primary?.[100]}
+        onchange={(e) => {
+          themeData.current.colors.primary[100] = e
         }}
-        backgroundColor={defaultColors.primary[100]}
-        on:contextmenu={(e) => {
+        oncontextmenu={(e) => {
           e.preventDefault()
-          $theme.colors.primary[100] =
+          themeData.current.colors.primary[100] =
             // @ts-ignore
             defaultColors.primary[100]
 
@@ -211,13 +214,13 @@
               <div class="flex flex-col gap-0.5 w-10 group">
                 <!--@ts-ignore-->
                 <ColorSwatch
-                  bind:value={$theme.colors[category][shade]}
-                  on:change={(e) => {
-                    $theme.colors[category][shade] = e.detail
+                  bind:value={themeData.current.colors[category][shade]}
+                  onchange={(e) => {
+                    themeData.current.colors[category][shade] = e
                   }}
-                  on:contextmenu={(e) => {
+                  oncontextmenu={(e) => {
                     e.preventDefault()
-                    $theme.colors[category][shade] =
+                    themeData.current.colors[category][shade] =
                       // @ts-ignore
                       defaultColors[category][shade]
 

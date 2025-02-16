@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import { resumables } from '$lib/lemmy/item'
   import { TextInput } from 'mono-svelte'
   import { createEventDispatcher, onMount } from 'svelte'
@@ -7,30 +9,34 @@
   import CommandItem from './CommandItem.svelte'
   import { browser } from '$app/environment'
   import { afterNavigate, goto } from '$app/navigation'
-  import { profile, profileData } from '$lib/auth'
-  import { getGroups, type Action, type Group } from './actions'
-  import { themeData } from '$lib/ui/colors'
-  import { page } from '$app/stores'
+  import { profile, profileData } from '$lib/auth.svelte'
+  import { getGroups, type Action, type Group } from './actions.svelte'
+  import { theme } from '$lib/ui/colors.svelte'
+  import { page } from '$app/state'
 
-  export let open = false
-  $: if (open) search = ''
+  interface Props {
+    open?: boolean
+    groups?: Group[]
+  }
 
-  export let groups: Group[] = []
+  let { open = $bindable(false), groups = $bindable([]) }: Props = $props()
 
-  $: groups = getGroups(
-    $resumables,
-    $profile,
-    $profileData.profiles,
-    $themeData,
-    $page.data.contextual?.actions
-  )
+  $effect(() => {
+    groups = getGroups(
+      $resumables,
+      profile.data,
+      profileData.profiles,
+      theme.data,
+      page.data.contextual?.actions
+    )
+  })
 
-  let search = ''
-  let container: HTMLElement
+  let search = $state('')
+  let container: HTMLElement | undefined = $state()
   const dispatch = createEventDispatcher()
-  let selectedIndex = 0
-  let filteredGroups: Group[] = []
-  let breadcrumbs: Action[] = []
+  let selectedIndex = $state(0)
+  let filteredGroups: Group[] = $state([])
+  let breadcrumbs: Action[] = $state([])
 
   function fuzzySearch(text: string, pattern: string): number {
     const textLower = text.toLowerCase()
@@ -132,9 +138,6 @@
     updateFilteredGroups()
   }
 
-  $: flattenedActions = filteredGroups.flatMap((group) => group.actions)
-  $: debouncedSearch(search)
-
   function flattenActions(
     actions: Action[],
     subaction: boolean = true
@@ -209,6 +212,7 @@
     if (!browser) return
 
     const listItems = container?.querySelectorAll('li')
+    if (!listItems) return
     listItems[index % listItems.length].focus()
     listItems[index % listItems.length].scrollIntoView({
       behavior: 'smooth',
@@ -229,20 +233,33 @@
     }
   }
 
-  afterNavigate(() => {
-    // open = false
+  $effect(() => {
+    if (open) search = ''
+  })
+
+  let flattenedActions = $derived(
+    filteredGroups.flatMap((group) => group.actions)
+  )
+
+  $effect(() => {
+    debouncedSearch(search)
   })
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
-<TextInput bind:value={search} autofocus class="sticky font-mono" />
-<div class="h-96 overflow-auto border-slate-200 dark:border-zinc-800">
+<TextInput
+  bind:value={search}
+  class="sticky rounded-none border-t-0 border-x-0 focus-within:dark:border-zinc-800"
+  size="lg"
+  placeholder={$t('nav.commands.prompt')}
+/>
+<div class="h-[32rem] overflow-auto border-slate-200 dark:border-zinc-800 p-5">
   {#if breadcrumbs.length > 0}
     <div class="flex items-center gap-2 my-1">
       <button
         class="text-[13px] font-medium text-slate-600 dark:text-zinc-400"
-        on:click={goBack}
+        onclick={goBack}
       >
         <Icon src={Home} size="16" mini />
       </button>
@@ -267,7 +284,7 @@
             <li>
               <CommandItem
                 {action}
-                on:click={(e) => {
+                onclick={(e) => {
                   if (action.href) {
                     togglePalette()
                     return

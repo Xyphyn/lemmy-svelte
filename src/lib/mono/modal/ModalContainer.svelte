@@ -1,20 +1,24 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import Button from '../button/Button.svelte'
   import Modal from '../modal/Modal.svelte'
   import { Icon } from 'svelte-hero-icons'
   import { shownModal } from './modal.js'
 
-  let open = false
+  let open = $state(false)
 
   // reactivity hack
-  $: open = $shownModal ? true : false
+  run(() => {
+    open = $shownModal ? true : false
+  })
 </script>
 
 {#if $shownModal}
   <Modal
     title={$shownModal.title}
     dismissable={$shownModal.dismissable}
-    on:dismissed={() => shownModal.set(undefined)}
+    ondismissed={() => shownModal.set(undefined)}
     bind:open
   >
     <p>{$shownModal.body}</p>
@@ -28,11 +32,11 @@
           <Button
             size="lg"
             class="flex-1 w-full"
-            on:click={action.action}
+            onclick={action.action}
             color={action.type}
           >
             {#if action.icon}
-              <Icon src={action.icon} mini size="16" slot="prefix" />
+              <Icon src={action.icon} mini size="16" />
             {/if}
             {action.content}
           </Button>

@@ -1,15 +1,16 @@
 {
   "name": "photon-lemmy",
-  "version": "1.31.5",
+  "version": "2.0.0",
   "devDependencies": {
     "@catdadcode/svelte-adapter-bun": "^0.5.7",
     "@dicebear/core": "^8.0.1",
     "@dicebear/initials": "^8.0.1",
-    "@sveltejs/adapter-auto": "^3.2.1",
-    "@sveltejs/adapter-node": "^2.0.0",
-    "@sveltejs/adapter-vercel": "^5.1.0",
-    "@sveltejs/kit": "^2.5.20",
-    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@svelte-put/qr": "^2.0.0",
+    "@sveltejs/adapter-auto": "^3.3.1",
+    "@sveltejs/adapter-node": "^5.2.9",
+    "@sveltejs/adapter-vercel": "^5.4.6",
+    "@sveltejs/kit": "^2.17.1",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tanstack/svelte-virtual": "^3.8.1",
     "@types/nprogress": "^0.2.0",
@@ -22,9 +23,11 @@
     "marked-linkify-it": "^3.1.10",
     "nprogress": "^0.2.0",
     "postcss": "^8.4.30",
+    "prettier": "^3.3.3",
+    "prettier-plugin-svelte": "^3.2.7",
     "rollup-plugin-visualizer": "^5.9.2",
-    "svelte": "^4.2.18",
-    "svelte-check": "^3.0.1",
+    "svelte": "^5.19.7",
+    "svelte-check": "^4.0.0",
     "svelte-floating-ui": "^1.5.9",
     "svelte-focus-trap": "^1.2.0",
     "svelte-hero-icons": "^5.2.0",
@@ -33,10 +36,13 @@
     "sveltekit-i18n": "^2.4.2",
     "tailwindcss": "^3.3.3",
     "tslib": "^2.4.1",
-    "typescript": "^5.0.0",
+    "typescript": "^5.5.0",
     "ua-parser-js": "^1.0.38",
-    "vite": "^5.0.0",
+    "vite": "^5.4.14",
     "vitest": "^1.0.0"
+  },
+  "overrides": {
+    "svelte": "^5.19.7"
   },
   "private": true,
   "scripts": {
@@ -47,11 +53,12 @@
     "start": "node build/index.js",
     "bunstart": "bun build/index.js",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "format": "prettier --write .",
+    "format:specific": "prettier --write"
   },
   "type": "module",
   "dependencies": {
-    "@svelte-put/qr": "^1.2.1",
     "install": "^0.13.0"
   }
 }

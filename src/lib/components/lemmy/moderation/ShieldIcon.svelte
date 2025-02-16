@@ -1,6 +1,11 @@
 <script lang="ts">
-  export let width: number = 16
-  export let filled: boolean = false
+  interface Props {
+    width?: number
+    filled?: boolean
+    class?: string
+  }
+
+  let { width = 16, filled = false, class: clazz = '' }: Props = $props()
 </script>
 
 {#if filled}
@@ -10,7 +15,7 @@
     viewBox="0 0 20 22"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    class="inline {$$props.class}"
+    class="inline {clazz}"
   >
     <path
       d="M10.516 1.17C10.3767 1.03791 10.192 0.964283 10 0.964283C9.80801 0.964283 9.62333 1.03791 9.484 1.17C7.36127 3.18588 4.53412 4.29133 1.607 4.25C1.44753 4.24793 1.29156 4.29674 1.16172 4.38935C1.03189 4.48196 0.934957 4.61355 0.885 4.765C0.462973 6.05116 0.248618 7.39637 0.25 8.75C0.25 14.692 4.314 19.683 9.813 21.098C9.93566 21.1296 10.0643 21.1296 10.187 21.098C15.686 19.683 19.75 14.692 19.75 8.75C19.75 7.36 19.527 6.02 19.115 4.765C19.0652 4.61336 18.9684 4.48156 18.8385 4.38875C18.7087 4.29595 18.5526 4.247 18.393 4.249L18.25 4.25C15.254 4.25 12.533 3.08 10.516 1.17Z"
@@ -24,7 +29,7 @@
     viewBox="0 0 20 22"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    class="inline {$$props.class}"
+    class="inline {clazz}"
   >
     <path
       fill-rule="evenodd"

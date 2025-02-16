@@ -1,21 +1,22 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
-  import { client } from '$lib/lemmy.js'
+  import { client } from '$lib/lemmy.svelte.js'
   import { t } from '$lib/translations.js'
   import { qr } from '@svelte-put/qr/svg'
   import { Button, Material, TextInput, toast } from 'mono-svelte'
   import { ClipboardDocument, Icon } from 'svelte-hero-icons'
 
-  export let data
+  let { data } = $props()
 
   // @ts-ignore
-  let totpLink: string | undefined = undefined
-  $: totpEnabled =
-    data.my_user?.local_user_view.local_user.totp_2fa_enabled ?? totpLink
+  let totpLink: string | undefined = $state(undefined)
+  let totpEnabled = $state(
+    data.my_user?.local_user_view.local_user.totp_2fa_enabled,
+  )
 
-  let verify_totp = ''
+  let verify_totp = $state('')
 
   async function twofa(enabled: boolean, update: boolean = false) {
     try {
@@ -30,7 +31,7 @@
           type: 'success',
         })
 
-        goto($page.url, { invalidateAll: true })
+        goto(page.url, { invalidateAll: true })
       } else {
         const res = await client().generateTotpSecret()
         totpLink = res.totp_secret_url
@@ -59,17 +60,18 @@
         value={totpLink}
         label={$t('form.profile.2fa.totp')}
       >
-        <button
-          slot="suffix"
-          class="contents"
-          on:click={() => {
-            if (!totpLink) return
-            navigator.clipboard?.writeText(totpLink)
-            toast({ content: $t('toast.copied') })
-          }}
-        >
-          <Icon src={ClipboardDocument} size="20" mini />
-        </button>
+        {#snippet suffix()}
+          <button
+            class="contents"
+            onclick={() => {
+              if (!totpLink) return
+              navigator.clipboard?.writeText(totpLink)
+              toast({ content: $t('toast.copied') })
+            }}
+          >
+            <Icon src={ClipboardDocument} size="20" mini />
+          </button>
+        {/snippet}
         <span class="font-normal text-xs">
           {$t('form.profile.2fa.paste')}
         </span>
@@ -77,7 +79,7 @@
     {/if}
     <form
       class="flex flex-col gap-2 w-full"
-      on:submit|preventDefault={() => {}}
+      onsubmit={(e) => e.preventDefault()}
     >
       <TextInput
         bind:value={verify_totp}
@@ -85,17 +87,17 @@
         label={$t('form.2fa')}
       />
       {#if totpEnabled}
-        <Button on:click={() => twofa(false, true)} size="lg" color="primary">
+        <Button onclick={() => twofa(false, true)} size="lg" color="primary">
           {$t('common.disable')}
         </Button>
       {:else}
-        <Button on:click={() => twofa(true, true)} size="lg" color="primary">
+        <Button onclick={() => twofa(true, true)} size="lg" color="primary">
           {$t('common.enable')}
         </Button>
       {/if}
     </form>
   {:else}
-    <Button on:click={() => twofa(true)} size="lg" color="primary">
+    <Button onclick={() => twofa(true)} size="lg" color="primary">
       {$t('form.setup')}
     </Button>
   {/if}

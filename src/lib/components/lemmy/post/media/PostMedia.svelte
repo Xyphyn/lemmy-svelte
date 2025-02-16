@@ -10,7 +10,7 @@
   import ExpandableImage, {
     showImage,
   } from '$lib/components/ui/ExpandableImage.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings, type View } from '$lib/settings.svelte.js'
   import type { Post } from 'lemmy-js-client'
   import PostIframe from './PostIframe.svelte'
   import { Button, Material, modal } from 'mono-svelte'
@@ -18,11 +18,21 @@
   import { ArrowDownTray, Icon } from 'svelte-hero-icons'
   import PostImage from './PostImage.svelte'
 
-  export let view: 'card' | 'cozy' | 'list' | 'compact' = 'cozy'
-  export let post: Post
-  export let type: MediaType = 'none'
-  export let opened: boolean | undefined = undefined
-  export let blur: boolean = post.nsfw && $userSettings.nsfwBlur
+  interface Props {
+    view?: View
+    post: Post
+    type?: MediaType
+    opened?: boolean | undefined
+    blur?: boolean
+  }
+
+  let {
+    view = 'cozy',
+    post,
+    type = 'none',
+    opened = undefined,
+    blur = post.nsfw && settings.nsfwBlur,
+  }: Props = $props()
 </script>
 
 <!-- 
@@ -31,9 +41,9 @@
   - A media item (pictures, videos) (large form factor posts only)
   - Embed link/card.
 -->
-{#if type == 'image' && (view == 'cozy' || view == 'card')}
+{#if type == 'image' && view == 'cozy'}
   <PostImage {post} {blur} />
-{:else if (type == 'iframe' || type == 'video') && (view == 'cozy' || view == 'card') && post.url}
+{:else if (type == 'iframe' || type == 'video') && view == 'cozy' && post.url}
   <PostIframe
     thumbnail={post.thumbnail_url}
     type={iframeType(post.url)}
@@ -43,7 +53,7 @@
 {:else if type == 'embed' && post.url}
   <PostLink
     url={post.url}
-    thumbnail_url={view != 'list' ? post.thumbnail_url : undefined}
+    thumbnail_url={post.thumbnail_url}
     nsfw={post.nsfw}
     embed_description={post.embed_description}
     embed_title={post.embed_title}

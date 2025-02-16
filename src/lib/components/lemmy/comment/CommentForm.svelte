@@ -1,41 +1,55 @@
 <script lang="ts">
   import type { CommentResponse } from 'lemmy-js-client'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient, site } from '$lib/lemmy.svelte.js'
   import { createEventDispatcher } from 'svelte'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
-  import { profile } from '$lib/auth.js'
-  import { toast } from 'mono-svelte'
+  import { profile } from '$lib/auth.svelte.js'
+  import { Menu, Select, Spinner, toast, Option, MenuButton } from 'mono-svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
-  import { placeholders } from '$lib/util.js'
+  import { placeholders } from '$lib/util.svelte.js'
   import { Button } from 'mono-svelte'
   import { t } from '$lib/translations'
   import { errorMessage } from '$lib/lemmy/error'
-  import { Icon, XMark } from 'svelte-hero-icons'
+  import { ArrowUp, Icon, Language, XMark } from 'svelte-hero-icons'
 
-  export let postId: number
-  export let parentId: number | undefined = undefined
-  export let locked: boolean = false
-  export let banned: boolean = false
-  export let rows: number = 7
-  export let placeholder: string | undefined = undefined
+  interface Props {
+    postId: number
+    parentId?: number | undefined
+    locked?: boolean
+    banned?: boolean
+    rows?: number
+    placeholder?: string | undefined
+    value?: string
+    actions?: boolean
+    preview?: boolean
+    oncomment?: (comment: CommentResponse) => void
+    onconfirm?: (value: string) => void
+    oncancel?: (cancel: boolean) => void
+    [key: string]: any
+  }
 
-  const dispatch = createEventDispatcher<{
-    comment: CommentResponse
-    confirm: string
-    cancel: boolean
-  }>()
+  let {
+    postId,
+    parentId = undefined,
+    locked = false,
+    banned = false,
+    rows = 7,
+    placeholder = undefined,
+    value = $bindable(''),
+    actions = true,
+    preview: previewAction = true,
+    oncancel,
+    oncomment,
+    onconfirm,
+    ...rest
+  }: Props = $props()
 
-  export let value = ''
-  export let actions = true
-
-  let previewAction = true
-  export { previewAction as preview }
-
-  let loading = false
+  let loading = $state(false)
   let preview = false
+  let language: number | undefined = $state()
 
   async function submit() {
-    if (!$profile?.user || !$profile?.jwt || value == '') return
+    if (!profile.data?.user || !profile.data?.jwt || value == '') return
 
     loading = true
 
@@ -45,7 +59,7 @@
         post_id: postId,
         parent_id: parentId,
       })
-      dispatch('comment', response)
+      oncomment?.(response)
 
       value = ''
     } catch (err) {
@@ -70,7 +84,7 @@
     </div>
   {:else}
     <MarkdownEditor
-      {...$$restProps}
+      {...rest}
       {rows}
       placeholder={locked
         ? $t('comment.locked')
@@ -79,35 +93,77 @@
           : (placeholder ?? placeholders.get('comment'))}
       bind:value
       disabled={locked || loading || banned}
-      on:confirm={() => {
+      onconfirm={() => {
         if (actions) {
           submit()
-          dispatch('confirm', value)
+          onconfirm?.(value)
         }
       }}
-      on:focus
       previewButton={previewAction}
     >
-      <div class="flex-1" />
+      <Menu>
+        {#snippet target()}
+          <Button
+            size="custom"
+            class="w-9 h-9"
+            rounding="pill"
+            color={language != undefined ? 'primary' : 'ghost'}
+            title={$t('form.profile.languages.title')}
+          >
+            <Icon src={Language} size="16" micro />
+          </Button>
+        {/snippet}
+
+        {#if site.data}
+          <MenuButton
+            class="min-h-[16px] py-0"
+            onclick={() => (language = undefined)}
+          >
+            <Icon src={XMark} size="16" micro />
+            {$t('form.post.unset')}
+          </MenuButton>
+          {#each site.data?.all_languages as languageOption}
+            <MenuButton
+              class="min-h-[16px] py-0"
+              onclick={() => {
+                language = languageOption.id
+              }}
+            >
+              {languageOption.name}
+            </MenuButton>
+          {/each}
+        {/if}
+      </Menu>
+      <div class="flex-1"></div>
       {#if actions}
         <Button
           size="custom"
           title={$t('common.cancel')}
-          on:click={() => dispatch('cancel', true)}
+          onclick={() => oncancel?.(true)}
           color="tertiary"
           class="w-8 h-8"
-          rounding="xl"
+          rounding="pill"
         >
-          <Icon src={XMark} size="16" micro />
+          <Icon
+            src={XMark}
+            size="20"
+            micro
+            class="text-slate-600 dark:text-zinc-400"
+          />
         </Button>
         <Button
-          on:click={submit}
+          onclick={submit}
           color="primary"
+          rounding="pill"
+          size="custom"
+          class="w-9 h-9"
+          title={$t('form.submit')}
           {loading}
           disabled={locked || loading || banned}
-          size="lg"
         >
-          {$t('form.submit')}
+          {#snippet prefix()}
+            <Icon src={ArrowUp} size="18" micro />
+          {/snippet}
         </Button>
       {/if}
     </MarkdownEditor>

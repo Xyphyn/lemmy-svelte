@@ -9,7 +9,7 @@
         "home": "Home",
         "admin": "Admin",
         "moderation": "Moderation",
-        "communities": "Explore",
+        "communities": "Communities",
         "search": "Search",
         "create": {
             "label": "Create",
@@ -167,6 +167,10 @@
                 "label": "Delete account",
                 "deleteContent": "Delete content",
                 "warning": "This will delete ALL of your submissions."
+            },
+            "languages": {
+                "title": "Languages",
+                "description": "If any are set, you will only see content explicitly tagged as that language. Most content, untagged, falls under 'Undetermined'."
             }
         },
         "email": "Email",
@@ -186,7 +190,16 @@
                 "anotherInstance": "Find another instance"
             }
         },
-        "description": "Description"
+        "description": "Description",
+        "time": {
+            "duration": "Duration",
+            "minutes": "Minutes",
+            "hours": "Hours",
+            "days": "Days",
+            "months": "Months",
+            "years": "Years",
+            "permanent": "Permanent"
+        }
     },
     "routes": {
         "frontpage": {
@@ -242,7 +255,7 @@
             "federating": "Federating",
             "query": "Query",
             "noResults": {
-                "title": "No Results",
+                "title": "No results",
                 "description": "There are no results that match that filter. Try refining your search.",
                 "alt": "Search across the fediverse"
             },
@@ -269,7 +282,8 @@
             "emptyComments": {
                 "title": "No comments",
                 "description": "Start the conversation!"
-            }
+            },
+            "commented": "Your comment was posted."
         },
         "inbox": {
             "title": "Inbox",
@@ -282,6 +296,10 @@
                 "reply": "{{user}} replied to you in {{post}}",
                 "mention": "{{user}} mentioned you in {{post}}",
                 "message": "{{user}} messaged {{recipient}}"
+            },
+            "messages": {
+                "conversation": "This is the beginning of your conversation with {{user}}",
+                "indicator": "Messaging {{user}}"
             }
         },
         "moderation": {
@@ -294,7 +312,9 @@
             "resolve": "Resolve",
             "resolved": "Resolved",
             "unresolve": "Unresolve",
-            "resolvedBy": "Resolved by"
+            "resolvedBy": "Resolved by",
+            "markAll": "Mark page resolved",
+            "markAllComplete": "Batch action completed."
         },
         "admin": {
             "title": "Administration",
@@ -421,7 +441,8 @@
                 "team": "Team",
                 "settings": "Settings",
                 "manage": "Manage"
-            }
+            },
+            "languageWarning": "Content in this community is in languages you do not have selected. Some or all posts may be missing."
         }
     },
     "cards": {
@@ -583,7 +604,8 @@
         "add": "Add",
         "cancel": "Cancel",
         "send": "Send",
-        "general": "General"
+        "general": "General",
+        "remove": "Remove"
     },
     "message": {
         "success": "Success",
@@ -676,17 +698,13 @@
             "pins": {
                 "title": "Pins",
                 "description": "Click a pin to send it to the top of the sidebar. Right click a pinned item to remove it."
-            },
-            "commands": {
-                "title": "Command palette",
-                "description": "Press slash or right click the photon logo to navigate around the app by searching."
             }
         },
         "app": {
-            "title": "Photon",
+            "title": "App",
             "theming": {
                 "title": "Theming",
-                "description": "Customize Photon's colors.",
+                "description": "Customize the UI colors.",
                 "link": "Go to themes"
             },
             "colorscheme": {
@@ -695,7 +713,7 @@
             },
             "lang": {
                 "title": "Language",
-                "description": "The language used for Photon's UI.",
+                "description": "The language used for text in the UI.",
                 "note": "Languages other than English and Hebrew are community translated, and may be incomplete.",
                 "en": "English",
                 "en-US": "English",
@@ -719,8 +737,7 @@
                 "title": "Post style",
                 "list": "Show posts in a list, with post bodies and compact media.",
                 "cozy": "Show posts with large images, rich embeds, and longer post bodies.",
-                "compact": "Show posts in a list, without post bodies and with tighter spacing.",
-                "legacy": "The old look of Photon."
+                "compact": "Show posts in a list, without post bodies and with tighter spacing."
             },
             "sort": {
                 "title": "Default sort",
@@ -762,12 +779,7 @@
             },
             "font": {
                 "title": "Font",
-                "description": "What font Photon uses in the UI."
-            },
-            "translation": {
-                "title": "Translation",
-                "description": "The LibreTranslate instance to use for translation.",
-                "instance": "Domain"
+                "description": "The font used for text in the UI."
             },
             "titleTags": {
                 "title": "Parse tags in title",
@@ -857,6 +869,9 @@
         },
         "account": {
             "title": "Account"
+        },
+        "donate": {
+            "description": "This app is open-source, and I've put my best effort into developing and maintaining it. If you'd like to support ongoing development, you can donate, or just recommend this to others!"
         }
     },
     "error": {
@@ -903,5 +918,10 @@
     "stats": {
         "joined": "Joined",
         "created": "Created"
+    },
+    "placeholders": {
+        "title": "Add a post title",
+        "body": "What do you have to say?",
+        "comments": "Join the conversation"
     }
 }

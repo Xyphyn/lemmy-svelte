@@ -1,6 +1,3 @@
-import { publishedToDate } from '$lib/components/util/date.js'
-import { getClient } from '$lib/lemmy.js'
-import type { Result } from '$lib/lemmy/item.js'
 import type {
   Comment,
   CommentReplyView,
@@ -25,7 +22,7 @@ export const generalizeCommentReply = (item: CommentReplyView): InboxItem => ({
 })
 
 export const generalizePersonMention = (
-  item: PersonMentionView
+  item: PersonMentionView,
 ): InboxItem => ({
   type: 'person_mention',
   id: item.person_mention.id,
@@ -38,7 +35,7 @@ export const generalizePersonMention = (
 })
 
 export const generalizePrivateMessage = (
-  item: PrivateMessageView
+  item: PrivateMessageView,
 ): InboxItem => ({
   type: 'private_message',
   id: item.private_message.id,

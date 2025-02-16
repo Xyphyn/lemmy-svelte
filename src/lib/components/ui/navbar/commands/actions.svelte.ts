@@ -1,15 +1,15 @@
 import { goto } from '$app/navigation'
-import { page } from '$app/stores'
-import { setUserID, type Profile } from '$lib/auth'
+import { page } from '$app/state'
+import { setUserID, type Profile } from '$lib/auth.svelte'
 import {
   amModOfAny,
   isAdmin,
 } from '$lib/components/lemmy/moderation/moderation'
 import { resumables, type ResumableItem } from '$lib/lemmy/item'
-import { userSettings } from '$lib/settings'
+import { settings } from '$lib/settings.svelte'
 import { t } from '$lib/translations'
-import { colorScheme, theme, themeData, type ThemeData } from '$lib/ui/colors'
-import { fullCommunityName } from '$lib/util'
+import { theme, type ThemeData } from '$lib/ui/colors.svelte'
+import { fullCommunityName } from '$lib/util.svelte'
 import {
   ArrowRightOnRectangle,
   Bookmark,
@@ -68,7 +68,7 @@ export function getGroups(
   profile: Profile,
   profiles: Profile[],
   td: ThemeData,
-  contextual?: Action[]
+  contextual?: Action[],
 ) {
   return [
     {
@@ -315,7 +315,7 @@ export function getGroups(
             await setUserID(p.id)
           }
 
-          await goto(get(page).url, {
+          await goto(page.url, {
             invalidateAll: true,
           })
         },
@@ -338,44 +338,14 @@ export function getGroups(
                 default: t.get('filter.view.compact'),
               }),
               icon: ViewColumns,
-              handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'compact',
-                })),
+              handle: () => (settings.view = 'compact'),
             },
             {
               name: t.get('nav.commands.setViewTo', {
                 default: t.get('filter.view.cozy'),
               }),
               icon: ViewColumns,
-              handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'cozy',
-                })),
-            },
-            {
-              name: t.get('nav.commands.setViewTo', {
-                default: t.get('filter.view.list'),
-              }),
-              icon: ViewColumns,
-              handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'list',
-                })),
-            },
-            {
-              name: t.get('nav.commands.setViewTo', {
-                default: t.get('filter.view.legacy'),
-              }),
-              icon: ViewColumns,
-              handle: () =>
-                userSettings.update((s) => ({
-                  ...s,
-                  view: 'card',
-                })),
+              handle: () => (settings.view = 'cozy'),
             },
           ],
         },
@@ -387,21 +357,21 @@ export function getGroups(
               name: t.get('nav.commands.setColorTo', {
                 default: t.get('nav.menu.colorscheme.system'),
               }),
-              handle: () => colorScheme.set('system'),
+              handle: () => (theme.colorScheme = 'system'),
               icon: ComputerDesktop,
             },
             {
               name: t.get('nav.commands.setColorTo', {
                 default: t.get('nav.menu.colorscheme.light'),
               }),
-              handle: () => colorScheme.set('light'),
+              handle: () => (theme.colorScheme = 'light'),
               icon: Sun,
             },
             {
               name: t.get('nav.commands.setColorTo', {
                 default: t.get('nav.menu.colorscheme.dark'),
               }),
-              handle: () => colorScheme.set('dark'),
+              handle: () => (theme.colorScheme = 'dark'),
               icon: Moon,
             },
           ],
@@ -412,11 +382,7 @@ export function getGroups(
           subActions: td.themes.map((th) => ({
             name: t.get('nav.commands.setThemeTo', { default: th.name }),
             icon: Swatch,
-            handle: () =>
-              themeData.update((td) => ({
-                ...td,
-                currentTheme: th.id,
-              })),
+            handle: () => (theme.data.currentTheme = th.id),
           })),
         },
       ],
@@ -439,12 +405,12 @@ export function getGroups(
     {
       name: t.get('profile.subscribed'),
       actions:
-        profile?.user?.follows.map((f) => ({
+        profile.user?.follows.map((f) => ({
           icon: f.community.icon,
           name: f.community.title,
           href: `/c/${fullCommunityName(
             f.community.name,
-            f.community.actor_id
+            f.community.actor_id,
           )}`,
           detail: new URL(f.community.actor_id).hostname,
         })) ?? [],

@@ -12,17 +12,31 @@
     size,
   } from '@floating-ui/core'
 
-  export let openOnHover: boolean = false
-  export let open: boolean = false
-  export let manual: boolean = false
+  interface Props {
+    openOnHover?: boolean
+    open?: boolean
+    manual?: boolean
+    placement?: Placement
+    middleware?: Middleware[]
+    strategy?: Strategy
+    class?: string
+    target?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+    [key: string]: any
+  }
 
-  export let placement: Placement = 'bottom-start'
-  export let middleware: Middleware[] = [
-    offset(6),
-    shift({ padding: 6 }),
-    flip(),
-  ]
-  export let strategy: Strategy = 'absolute'
+  let {
+    openOnHover = false,
+    open = $bindable(false),
+    manual = false,
+    placement = 'bottom-start',
+    middleware = [offset(6), shift({ padding: 6 }), flip()],
+    strategy = 'absolute',
+    class: clazz = '',
+    target,
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
 <Popover
@@ -31,23 +45,24 @@
   {middleware}
   {strategy}
   {manual}
-  {...$$restProps}
+  {...rest}
   bind:open
-  popoverClass="backdrop-blur-xl rounded-xl w-full max-w-[280px]"
-  class={$$props.class}
+  popoverClass="backdrop-blur-xl rounded-2xl w-full max-w-[280px]"
+  class={clazz}
+  {target}
 >
-  <slot name="target" slot="target" />
-  <div
-    slot="popover"
-    class="w-full max-w-[280px] origin-top-left
-	max-h-[32rem] overflow-auto list-none shadow-lg rounded-xl"
-  >
+  {#snippet popover()}
     <div
-      class="flex flex-col py-2 list-none bg-white/80 dark:bg-zinc-900/80 px-2 gap-px
-      rounded-xl
-      border border-slate-200 dark:border-zinc-800 border-opacity-50"
+      class="w-full max-w-[280px] origin-top-left
+  	max-h-[32rem] overflow-auto list-none shadow-lg rounded-2xl"
     >
-      <slot />
+      <div
+        class="flex flex-col py-2 list-none bg-white/80 dark:bg-zinc-900/90 px-2 gap-px
+        rounded-2xl
+        border border-slate-300 dark:border-zinc-800 border-opacity-50"
+      >
+        {@render children?.()}
+      </div>
     </div>
-  </div>
+  {/snippet}
 </Popover>

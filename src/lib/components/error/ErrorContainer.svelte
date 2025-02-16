@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   import { writable } from 'svelte/store'
 
   interface PageScopedError {
@@ -6,14 +6,14 @@
     message: string
   }
 
-  export let errors = writable<PageScopedError[]>([])
+  let errors = $state<PageScopedError[]>([])
 
   export function pushError(args: { scope: string; message: string }) {
-    errors.update((e) => [...e, args])
+    errors.push(args)
   }
 
   export function clearErrorScope(scope: string | null | undefined) {
-    errors.update((errors) => errors.filter((error) => error.scope != scope))
+    errors = errors.filter((error) => error.scope != scope)
   }
 </script>
 
@@ -24,20 +24,24 @@
   import { expoOut } from 'svelte/easing'
   import { onDestroy } from 'svelte'
 
-  export let scope: string | undefined | null = undefined
-
-  $: scopedErrors = $errors.filter(
-    (e) => e.scope == scope || e.scope == 'global'
-  )
-
   onDestroy(() => {
     clearErrorScope(scope)
   })
+  interface Props {
+    scope?: string | undefined | null
+    class?: string
+  }
+
+  let { scope = undefined, class: clazz = '' }: Props = $props()
+
+  let scopedErrors = $derived(
+    errors.filter((e) => e.scope == scope || e.scope == 'global'),
+  )
 </script>
 
 {#if scopedErrors.length > 0}
   <div
-    class={$$props.class}
+    class={clazz}
     in:slide={{ duration: 400, easing: expoOut }}
     out:slide={{ duration: 400, delay: 400, easing: expoOut }}
   >
@@ -60,7 +64,7 @@
         {/each}
       </div>
       <Button
-        on:click={() => clearErrorScope(scope)}
+        onclick={() => clearErrorScope(scope)}
         color="tertiary"
         size="square-sm"
         class="ml-auto"

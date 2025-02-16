@@ -1,27 +1,42 @@
 <script lang="ts">
   import Avatar from '$lib/components/ui/Avatar.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import { t } from '$lib/translations'
   import type { Community } from 'lemmy-js-client'
   import { ExclamationTriangle, Icon } from 'svelte-hero-icons'
 
-  export let community: Community
-
-  export let avatar: boolean = false
-  export let name: boolean = true
-  export let avatarSize: number = 24
-  export let showInstance: boolean = $userSettings.showInstances.community
-  export let displayName: boolean = true
-
-  export let badges = {
-    nsfw: false,
+  interface Props {
+    community: Community
+    avatar?: boolean
+    name?: boolean
+    avatarSize?: number
+    showInstance?: boolean
+    displayName?: boolean
+    badges?: any
+    class?: string
+    instanceClass?: string
+    [key: string]: any
   }
+
+  let {
+    community,
+    avatar = false,
+    name = true,
+    avatarSize = 24,
+    showInstance = settings.showInstances.community,
+    displayName = true,
+    badges = {
+      nsfw: false,
+    },
+    class: clazz = '',
+    instanceClass = '',
+    ...rest
+  }: Props = $props()
 </script>
 
 <a
-  {...$$restProps}
-  class="items-center flex flex-row gap-2 hover:underline max-w-full min-w-0 {$$props.class ||
-    ''}"
+  {...rest}
+  class="items-center flex flex-row gap-2 hover:underline max-w-full min-w-0 {clazz}"
   href="/c/{community.name}@{new URL(community.actor_id).hostname}"
   data-sveltekit-preload-data="tap"
 >
@@ -42,7 +57,7 @@
       {#if showInstance}
         <span
           class="text-slate-500 dark:text-zinc-500 font-normal
-          instance-text flex-shrink {$$props.instanceClass || ''}"
+          instance-text flex-shrink {instanceClass || ''}"
         >
           @{new URL(community.actor_id).hostname}
         </span>

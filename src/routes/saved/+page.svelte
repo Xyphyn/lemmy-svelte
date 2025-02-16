@@ -1,12 +1,14 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import type { CommentView, PostView } from 'lemmy-js-client'
   import Post from '$lib/components/lemmy/post/Post.svelte'
   import { fly } from 'svelte/transition'
   import CommentItem from '$lib/components/lemmy/comment/CommentItem.svelte'
-  import { userSettings } from '$lib/settings.js'
+  import { settings } from '$lib/settings.svelte.js'
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { searchParam } from '$lib/util.js'
-  import { page } from '$app/stores'
+  import { searchParam } from '$lib/util.svelte.js'
+  import { page } from '$app/state'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { Bookmark } from 'svelte-hero-icons'
   import { t } from '$lib/translations.js'
@@ -21,11 +23,11 @@
     ChatBubbleOvalLeft,
     AdjustmentsHorizontal,
   } from 'svelte-hero-icons'
+  import Option from 'mono-svelte/forms/select/Option.svelte'
 
-  export let data
+  let { data } = $props()
 
-  // svelte being stupid
-  $: type = data.type as any
+  let type = $state(data.type)!
 
   const isComment = (item: CommentView | PostView): item is CommentView =>
     'comment' in item
@@ -38,34 +40,33 @@
 <Header pageHeader>
   {$t('routes.saved')}
 
-  <div slot="extended" class="flex items-center">
-    <Select
-      bind:value={type}
-      on:change={() => searchParam($page.url, 'type', type, 'page')}
-    >
-      <div class="flex items-center gap-0.5" slot="label">
-        <Icon src={AdjustmentsHorizontal} size="15" mini />
-        {$t('filter.filter')}
-      </div>
-      <option value="all">
-        <Icon src={Bars3} micro size="15" />
-        {$t('content.all')}
-      </option>
-      <option value="posts">
-        <Icon src={PencilSquare} micro size="15" />
-        {$t('content.posts')}
-      </option>
-      <option value="comments">
-        <Icon src={ChatBubbleOvalLeft} micro size="15" />
-        {$t('content.comments')}
-      </option>
-    </Select>
-  </div>
+  {#snippet extended()}
+    <div class="flex items-center">
+      <Select
+        bind:value={type}
+        onchange={() => searchParam(page.url, 'type', type, 'page')}
+      >
+        {#snippet customLabel()}
+          <div class="flex items-center gap-0.5">
+            <Icon src={AdjustmentsHorizontal} size="15" mini />
+            {$t('filter.filter')}
+          </div>
+        {/snippet}
+        <Option icon={Bars3} value="all">
+          {$t('content.all')}
+        </Option>
+        <Option icon={PencilSquare} value="posts">
+          {$t('content.posts')}
+        </Option>
+        <Option icon={ChatBubbleOvalLeft} value="comments">
+          {$t('content.comments')}
+        </Option>
+      </Select>
+    </div>
+  {/snippet}
 </Header>
 <div
-  class="flex flex-col list-none my-4 divide-slate-200 dark:divide-zinc-800"
-  class:gap-4={$userSettings.view == 'card'}
-  class:!divide-y={$userSettings.view != 'card'}
+  class="flex flex-col list-none my-4 divide-slate-200 dark:divide-zinc-800 divide-y"
 >
   {#if !data.data || (data.data?.length ?? 0) == 0}
     <Placeholder
@@ -90,9 +91,6 @@
   style="bottom: max(1.5rem, {$contentPadding.bottom}px);"
 >
   <Tabs routes={[]} class="mx-auto">
-    <Pageination
-      on:change={(p) => searchParam($page.url, 'page', p.detail.toString())}
-      page={data.page}
-    />
+    <Pageination href={(page) => `?page=${page}`} page={data.page} />
   </Tabs>
 </div>

@@ -1,30 +1,48 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
-  import { Label, Switch, toast } from 'mono-svelte'
-  import { getClient } from '$lib/lemmy.js'
+  import {
+    Badge,
+    Label,
+    Material,
+    Menu,
+    MenuButton,
+    Switch,
+    toast,
+  } from 'mono-svelte'
+  import { getClient, site } from '$lib/lemmy.svelte.js'
   import type { EditSite } from 'lemmy-js-client'
   import type { PageData } from './$types.js'
   import { Button, Checkbox, Select, TextInput } from 'mono-svelte'
   import ImageUploadModal from '$lib/components/lemmy/modal/ImageUploadModal.svelte'
-  import { DocumentPlus, Icon } from 'svelte-hero-icons'
+  import { DocumentPlus, Icon, Plus } from 'svelte-hero-icons'
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
+  import Option from 'mono-svelte/forms/select/Option.svelte'
+  import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
 
-  export let data: PageData
+  interface Props {
+    data: PageData
+  }
 
-  const formData: Omit<EditSite, 'auth'> | undefined = data.site
-    ? {
-        ...data.site.site_view.local_site,
-        ...data.site.site_view.site,
-      }
-    : undefined
+  let { data: pageData }: Props = $props()
+  let data = $state(pageData)
+
+  const formData: Omit<EditSite, 'auth'> | undefined = $state(
+    data.site
+      ? {
+          ...data.site.site_view.local_site,
+          ...data.site.site_view.site,
+          discussion_languages: data.site.discussion_languages,
+        }
+      : undefined,
+  )
 
   async function save() {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     saving = true
-    const { jwt } = $profile
+    const { jwt } = profile.data
 
     try {
       await getClient().editSite({
@@ -44,41 +62,55 @@
     saving = false
   }
 
-  let saving = false
+  let saving = $state(false)
 
-  let uploading = {
+  let uploading = $state({
     icon: false,
     banner: false,
-  }
+  })
 </script>
 
 <svelte:head>
   <title>{$t('routes.admin.title')}</title>
 </svelte:head>
 
-<form class="flex flex-col gap-4" on:submit|preventDefault={save}>
+<form
+  class="flex flex-col gap-4"
+  onsubmit={(e) => {
+    e.preventDefault()
+    save()
+  }}
+>
   <Header pageHeader>{$t('routes.admin.config.title')}</Header>
   {#if formData}
-    <TextInput bind:value={formData.name} label={$t('form.name')} />
     <TextInput
-      bind:value={formData.description}
+      bind:value={() => formData.name ?? '', (v) => (formData.description = v)}
+      label={$t('form.name')}
+    />
+    <TextInput
+      bind:value={
+        () => formData.description ?? '', (v) => (formData.description = v)
+      }
       label={$t('form.description')}
     />
     <MarkdownEditor
       previewButton
-      bind:value={formData.sidebar}
+      bind:value={() => formData.sidebar ?? '', (v) => (formData.sidebar = v)}
       label={$t('routes.admin.config.sidebar')}
     />
     <MarkdownEditor
       previewButton
-      bind:value={formData.legal_information}
+      bind:value={
+        () => formData.legal_information ?? '',
+        (v) => (formData.legal_information = v)
+      }
       label={$t('routes.legal.title')}
     />
     <div class="flex flex-col gap-1">
       <Label>{$t('routes.admin.config.icon')}</Label>
       <button
         type="button"
-        on:click={() => (uploading.icon = !uploading.icon)}
+        onclick={() => (uploading.icon = !uploading.icon)}
         class="flex flex-col gap-4 bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-4 w-full h-32 rounded-xl"
       >
         {#if formData.icon}
@@ -95,9 +127,9 @@
         <ImageUploadModal
           bind:open={uploading.icon}
           multiple={false}
-          on:upload={(uploaded) => {
+          onupload={(uploaded) => {
             uploading.icon = false
-            formData.icon = uploaded.detail[0]
+            formData.icon = uploaded[0]
           }}
         />
       {/if}
@@ -106,7 +138,7 @@
       <Label>{$t('routes.admin.config.banner')}</Label>
       <button
         type="button"
-        on:click={() => (uploading.banner = !uploading.banner)}
+        onclick={() => (uploading.banner = !uploading.banner)}
         class="flex flex-col gap-4 bg-white dark:bg-black border border-slate-300 dark:border-zinc-800 p-4 w-full h-32 rounded-xl"
       >
         {#if formData.banner}
@@ -123,9 +155,9 @@
         <ImageUploadModal
           bind:open={uploading.banner}
           multiple={false}
-          on:upload={(uploaded) => {
+          onupload={(uploaded) => {
             uploading.banner = false
-            formData.banner = uploaded.detail[0]
+            formData.banner = uploaded[0]
           }}
         />
       {/if}
@@ -141,15 +173,15 @@
       bind:value={formData.registration_mode}
       class="w-max"
     >
-      <option value="Open">
+      <Option value="Open">
         {$t('routes.admin.config.registration.open')}
-      </option>
-      <option value="RequireApplication">
+      </Option>
+      <Option value="RequireApplication">
         {$t('routes.admin.config.registration.application')}
-      </option>
-      <option value="Closed">
+      </Option>
+      <Option value="Closed">
         {$t('routes.admin.config.registration.closed')}
-      </option>
+      </Option>
     </Select>
     {#if formData.registration_mode == 'RequireApplication'}
       <MarkdownEditor
@@ -184,10 +216,10 @@
       bind:value={formData.default_post_listing_type}
       class="w-max"
     >
-      <option value="All">{$t('routes.admin.config.listingType.all')}</option>
-      <option value="Local">
+      <Option value="All">{$t('routes.admin.config.listingType.all')}</Option>
+      <Option value="Local">
         {$t('routes.admin.config.listingType.local')}
-      </option>
+      </Option>
     </Select>
     <Switch bind:checked={formData.private_instance} defaultValue={true}>
       {$t('routes.admin.config.private')}
@@ -209,6 +241,51 @@
     <Switch bind:checked={formData.captcha_enabled} defaultValue={false}>
       {$t('routes.admin.config.captcha.enabled')}
     </Switch>
+
+    <div class="space-y-1">
+      <SectionTitle>{$t('form.profile.languages.title')}</SectionTitle>
+      <p>{$t('form.profile.languages.description')}</p>
+      <Material rounding="xl" color="uniform" class="dark:bg-zinc-950">
+        {#if site.data}
+          <div class="flex gap-2 flex-wrap flex-row">
+            <Menu class="gap-px">
+              {#snippet target()}
+                <button type="button">
+                  <Badge color="blue-subtle">
+                    <Icon src={Plus} micro size="14" />
+                    {$t('common.add')}
+                  </Badge>
+                </button>
+              {/snippet}
+              {#each site.data.all_languages.filter((l) => !formData.discussion_languages?.includes(l.id)) as language, index}
+                <MenuButton
+                  class="min-h-[16px] py-0"
+                  onclick={() => {
+                    formData.discussion_languages?.push(language.id)
+                  }}
+                >
+                  {language.name}
+                </MenuButton>
+              {/each}
+            </Menu>
+            {#each formData.discussion_languages ?? [] as languageId, index}
+              {@const language = site.data.all_languages.find(
+                (l) => l.id == languageId,
+              )}
+              <button
+                type="button"
+                class="hover:brightness-150 transition-all"
+                onclick={() => {
+                  formData.discussion_languages?.splice(index, 1)
+                }}
+              >
+                <Badge class="cursor-pointer">{language?.name}</Badge>
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </Material>
+    </div>
   {/if}
   <Button color="primary" size="lg" loading={saving} disabled={saving} submit>
     {$t('common.save')}

@@ -1,7 +1,10 @@
 <script>
   import { env } from '$env/dynamic/public'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
-  import { DEFAULT_INSTANCE_URL, LINKED_INSTANCE_URL } from '$lib/instance'
+  import {
+    DEFAULT_INSTANCE_URL,
+    LINKED_INSTANCE_URL,
+  } from '$lib/instance.svelte'
 </script>
 
 <Header pageHeader>Photon instance</Header>

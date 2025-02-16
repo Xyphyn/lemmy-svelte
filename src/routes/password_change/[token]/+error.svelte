@@ -1,5 +1,5 @@
 <script>
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { t } from '$lib/translations'
   import { XMark, Icon } from 'svelte-hero-icons'
 </script>
@@ -13,5 +13,5 @@
   <h1 class="text-red-800 dark:text-red-300 text-2xl font-semibold">
     {$t('message.error')}
   </h1>
-  <code>{$page.error?.message}</code>
+  <code>{page.error?.message}</code>
 </div>

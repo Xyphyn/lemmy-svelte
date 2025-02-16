@@ -1,37 +1,35 @@
 <script lang="ts">
+  import Comments from './Comments.svelte'
   import Comment from './Comment.svelte'
-  import { buildCommentsTree, type CommentNodeI } from './comments'
-  import { page } from '$app/stores'
+  import { buildCommentsTree, type CommentNodeI } from './comments.svelte'
+  import { page } from '$app/state'
   import { onMount, setContext } from 'svelte'
-  import {
-    ChevronDoubleDown,
-    ChevronDown,
-    Icon,
-    Plus,
-    PlusCircle,
-    ArrowDownCircle,
-  } from 'svelte-hero-icons'
-  import { getClient } from '$lib/lemmy.js'
+  import { Icon, ArrowDownCircle } from 'svelte-hero-icons'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import type { CommentView, Post } from 'lemmy-js-client'
   import { fly } from 'svelte/transition'
   import { toast } from 'mono-svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button } from 'mono-svelte'
   import { afterNavigate, goto } from '$app/navigation'
   import { backOut, expoOut } from 'svelte/easing'
   import { t } from '$lib/translations'
   import { browser } from '$app/environment'
 
-  export let nodes: CommentNodeI[]
-  export let isParent: boolean
-  export let post: Post
+  interface Props {
+    nodes: CommentNodeI[]
+    isParent: boolean
+    post: Post
+  }
 
-  let hydrated = false
+  let { nodes = $bindable(), isParent, post }: Props = $props()
+
+  let hydrated = $state(false)
 
   onMount(() => {
     hydrated = true
-    if (isParent && $page.url.hash && browser) {
-      document.getElementById($page.url.hash)?.scrollIntoView({
+    if (isParent && page.url.hash && browser) {
+      document.getElementById(page.url.hash)?.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
       })
@@ -47,13 +45,14 @@
         parent.comment_view.counts.child_count > 0 &&
         parent.children.length == 0
       )
-    )
+    ) {
       return
+    }
 
     try {
       parent.loading = true
 
-      const newComments = await getClient($page.params.instance).getComments({
+      const newComments = await getClient(page.params.instance).getComments({
         max_depth: 5,
         parent_id: parent.comment_view.comment.id,
         type_: 'All',
@@ -74,7 +73,7 @@
       // 0.18.2 -> 0.18.3 broke this
       // so i'm adding this check
       const treeParent = tree.find(
-        (c) => c.comment_view.comment.id == parent.comment_view.comment.id
+        (c) => c.comment_view.comment.id == parent.comment_view.comment.id,
       )
 
       if (treeParent) {
@@ -113,51 +112,53 @@
     ? 'divide-y dark:divide-zinc-900 divide-slate-100'
     : ' border-slate-200 dark:border-zinc-800 my-1'}
 >
-  {#each nodes as node (node.comment_view.comment.id)}
+  {#each nodes as node, index (node.comment_view.comment.id)}
     <Comment
       postId={post.id}
-      bind:node
-      bind:open={node.ui.open}
+      node={nodes[index]}
       op={post.creator_id == node.comment_view.creator.id}
-      contentClass="pl-3 {node.children.length > 0 ||
+      contentClass="{node.children.length > 0 ||
       node.comment_view.counts.child_count > 0
         ? 'border-l'
-        : ''} ml-3 border-slate-200 dark:border-zinc-800"
+        : ''} ml-2.5 border-slate-200 dark:border-zinc-800 pl-2.5 "
     >
       {#if node.children?.length > 0}
-        <svelte:self {post} bind:nodes={node.children} isParent={false} />
+        <Comments {post} nodes={nodes[index].children} isParent={false} />
       {/if}
       {#if node.comment_view.counts.child_count > 0 && node.children.length == 0}
         <svelte:element
           this={hydrated ? 'div' : 'a'}
           class="w-full my-2 h-8"
-          href="/comment/{$page.params.instance}/{node.comment_view.comment.id}"
+          href="/comment/{page.params.instance}/{node.comment_view.comment.id}"
         >
           <Button
-            loading={node.loading}
-            disabled={node.loading}
+            loading={nodes[index].loading}
+            disabled={nodes[index].loading}
             rounding="pill"
             color="tertiary"
             class="font-normal text-slate-600 dark:text-zinc-400"
             loaderWidth={16}
-            on:click={() => {
-              if (node.depth > 4) {
+            onclick={() => {
+              if (nodes[index].depth > 4) {
                 goto(
-                  `/comment/${$page.params.instance}/${node.comment_view.comment.id}#comments`
+                  `/comment/${page.params.instance}/${nodes[index].comment_view.comment.id}#comments`,
                 )
               } else {
-                node.loading = true
-                fetchChildren(node).then(() => (node.loading = false))
+                nodes[index].loading = true
+                fetchChildren(nodes[index]).then(
+                  () => (nodes[index].loading = false),
+                )
               }
             }}
           >
-            <Icon
-              src={ArrowDownCircle}
-              micro
-              size="16"
-              slot="prefix"
-              class="text-primary-900 dark:text-primary-100"
-            />
+            {#snippet prefix()}
+              <Icon
+                src={ArrowDownCircle}
+                micro
+                size="16"
+                class="text-primary-900 dark:text-primary-100"
+              />
+            {/snippet}
             {$t('comment.more', {
               // @ts-ignore
               comments: node.comment_view.counts.child_count,

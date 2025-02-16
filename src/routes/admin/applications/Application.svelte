@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { notifications, profile } from '$lib/auth.js'
+  import { notifications, profile } from '$lib/auth.svelte.js'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
   import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
   import { Material, toast } from 'mono-svelte'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import type {
     ApproveRegistrationApplication,
     RegistrationApplicationView,
@@ -15,15 +15,19 @@
   import ApplicationDenyModal from '$lib/components/lemmy/modal/ApplicationDenyModal.svelte'
   import { t } from '$lib/translations'
 
-  export let application: RegistrationApplicationView
+  interface Props {
+    application: RegistrationApplicationView
+  }
 
-  let approving = false
-  let denying = false
-  let denyReason = ''
-  let reviewing = false
+  let { application = $bindable() }: Props = $props()
+
+  let approving = $state(false)
+  let denying = $state(false)
+  let denyReason = $state('')
+  let reviewing = $state(false)
 
   async function review(approve: boolean) {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     let registrationApplicationAnswer: ApproveRegistrationApplication = {
       approve: approve,
@@ -48,7 +52,7 @@
 
     try {
       await getClient().approveRegistrationApplication(
-        registrationApplicationAnswer
+        registrationApplicationAnswer,
       )
       toast({
         content: approve
@@ -57,7 +61,7 @@
         type: 'success',
       })
       application.creator_local_user.accepted_application = approve
-      application.admin = $profile.user!.local_user_view.person
+      application.admin = profile.data.user!.local_user_view.person
       application.registration_application.deny_reason = denyReason
 
       $notifications.applications -= 1
@@ -114,7 +118,7 @@
           </div>
           <p>{application.registration_application.deny_reason}</p>
         </div>
-        <div class="md:ml-auto" />
+        <div class="md:ml-auto"></div>
       {:else}
         <div class="flex items-center gap-1 text-sm">
           <UserLink avatar user={application.admin} />
@@ -124,7 +128,7 @@
               : $t('routes.admin.applications.denied')}
           </SectionTitle>
         </div>
-        <div class="md:ml-auto" />
+        <div class="md:ml-auto"></div>
       {/if}
     {/if}
     <div class="ml-auto self-end">
@@ -135,11 +139,13 @@
           ? '!text-red-500'
           : ''}"
         aria-label={$t('routes.admin.applications.deny')}
-        on:click={() => review(false)}
+        onclick={() => review(false)}
         loading={denying || reviewing}
         disabled={approving || denying || reviewing}
       >
-        <Icon src={XMark} mini size="16" slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={XMark} mini size="16" />
+        {/snippet}
       </Button>
       <Button
         size="square-md"
@@ -148,11 +154,13 @@
           ? '!text-green-500'
           : ''}"
         title={$t('routes.admin.applications.approve')}
-        on:click={() => review(true)}
+        onclick={() => review(true)}
         loading={approving}
         disabled={approving || denying || reviewing}
       >
-        <Icon src={Check} mini size="16" slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Check} mini size="16" />
+        {/snippet}
       </Button>
     </div>
   </div>

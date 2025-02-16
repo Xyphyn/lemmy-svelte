@@ -1,15 +1,23 @@
 <script lang="ts">
   import { locale } from '$lib/translations'
 
-  export let number: number
-  let localeToUse: string = $locale
-  export let options: Intl.NumberFormatOptions = {
-    notation: 'compact',
+  interface Props {
+    number: number
+    locale?: string
+    options?: Intl.NumberFormatOptions
+    class?: string
   }
 
-  export { localeToUse as locale }
+  let {
+    number,
+    locale: localeToUse = $locale,
+    options = {
+      notation: 'compact',
+    },
+    class: clazz = '',
+  }: Props = $props()
 </script>
 
-<span class={$$props.class ?? ''}>
+<span class={clazz ?? ''}>
   {Intl.NumberFormat(localeToUse, options).format(number)}
 </span>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte'
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte'
   import { addFavorite } from '$lib/lemmy/item'
@@ -10,8 +10,12 @@
   import { flip } from 'svelte/animate'
   import { expoOut } from 'svelte/easing'
 
-  export let items: Community[]
-  export let isFavorites = false
+  interface Props {
+    items: Community[]
+    isFavorites?: boolean
+  }
+
+  let { items, isFavorites = false }: Props = $props()
 </script>
 
 {#each items.sort( (a, b) => a.title.localeCompare(b.title), ) as follow (follow.id)}
@@ -21,25 +25,25 @@
     animate:flip={{ duration: 500, easing: expoOut }}
   >
     <div class="flex-none grid group">
-      {#if $profile && !hasFavorite($profile, follow.id)}
+      {#if profile && !hasFavorite(profile.data, follow.id)}
         <Button
           rounding="pill"
           size="custom"
           class="hidden group-hover:inline-flex opacity-0 group-hover:opacity-100 transition-all z-20
       items-center justify-center box-border w-7 h-7"
           style="grid-column: 1; grid-row: 1;"
-          on:click={() => addFavorite(follow)}
+          onclick={() => addFavorite(follow)}
         >
           <Icon src={Star} size="16" mini />
         </Button>
-      {:else if isFavorites && $profile && hasFavorite($profile, follow.id)}
+      {:else if isFavorites && profile && hasFavorite(profile.data, follow.id)}
         <Button
           rounding="pill"
           size="custom"
           class="hidden group-hover:inline-flex opacity-0 group-hover:opacity-100 transition-all z-20
     items-center justify-center box-border w-7 h-7"
           style="grid-column: 1; grid-row: 1;"
-          on:click={() => addFavorite(follow, false)}
+          onclick={() => addFavorite(follow, false)}
         >
           <Icon src={Trash} size="16" mini />
         </Button>
@@ -49,7 +53,7 @@
         alt={follow.name}
         title={follow.title}
         width={28}
-        class={!isFavorites && $profile && hasFavorite($profile, follow.id)
+        class={!isFavorites && profile && hasFavorite(profile.data, follow.id)
           ? ''
           : 'group-hover:hidden'}
       />
@@ -60,12 +64,14 @@
       alignment="left"
       href="/c/{follow.name}@{new URL(follow.actor_id).hostname}"
     >
-      <div class="flex flex-col max-w-full break-words" slot="label">
-        <span>{follow.title}</span>
-        <span class="text-xs text-slate-600 dark:text-zinc-400">
-          {new URL(follow.actor_id).hostname}
-        </span>
-      </div>
+      {#snippet label()}
+        <div class="flex flex-col max-w-full break-words">
+          <span>{follow.title}</span>
+          <span class="text-xs text-slate-600 dark:text-zinc-400">
+            {new URL(follow.actor_id).hostname}
+          </span>
+        </div>
+      {/snippet}
     </SidebarButton>
   </div>
 {/each}

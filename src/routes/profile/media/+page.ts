@@ -1,10 +1,8 @@
-import { profile } from '$lib/auth.js'
-import { client } from '$lib/lemmy.js'
-import { error } from '@sveltejs/kit'
-import { get } from 'svelte/store'
+import { profile } from '$lib/auth.svelte'
+import { client } from '$lib/lemmy.svelte.js'
 
 export async function load({ fetch, url }) {
-  const { jwt } = get(profile)
+  const { jwt } = profile.data
 
   let page = Number(url.searchParams.get('page')) || 1
 

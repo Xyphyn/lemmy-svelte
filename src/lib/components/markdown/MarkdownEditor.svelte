@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { run } from 'svelte/legacy'
+
+  import { profile } from '$lib/auth.svelte.js'
   import MultiSelect from '$lib/components/input/Switch.svelte'
   import Markdown from '$lib/components/markdown/Markdown.svelte'
   import { t } from '$lib/translations'
-  import { uploadImage } from '$lib/util.js'
+  import { uploadImage } from '$lib/util.svelte.js'
   import { ImageInput, toast } from 'mono-svelte'
   import { Button, Label, Modal, TextArea } from 'mono-svelte'
   import { createEventDispatcher, tick } from 'svelte'
@@ -21,20 +23,10 @@
     Strikethrough,
   } from 'svelte-hero-icons'
   import ImageUploadModal from '../lemmy/modal/ImageUploadModal.svelte'
+  import type { HTMLTextareaAttributes } from 'svelte/elements'
+  import type { TextAreaProps } from 'mono-svelte/forms/TextArea.svelte'
 
-  export let images: boolean = true
-  export let value: string = ''
-  export let label: string | undefined = undefined
-  export let previewButton: boolean = true
-  export let tools: boolean = true
-  export let disabled: boolean = false
-  export let rows: number = 2
-
-  export let beforePreview: (input: string) => string = (input) => input
-
-  const dispatcher = createEventDispatcher<{ confirm: string }>()
-
-  let textArea: HTMLTextAreaElement
+  let textArea: HTMLTextAreaElement | undefined = $state()
 
   function replaceTextAtIndices(
     str: string,
@@ -46,6 +38,7 @@
   }
 
   function wrapSelection(start: string, end: string) {
+    if (!textArea) return
     const startPos = textArea.selectionStart
     const endPos = textArea.selectionEnd
 
@@ -66,10 +59,8 @@
     value = textArea.value
   }
 
-  let uploadingImage = false
-  let image: any
-
-  export let previewing = false
+  let uploadingImage = $state(false)
+  let image = $state<any>(null)
 
   const shortcuts = {
     KeyB: () => wrapSelection('**', '**'),
@@ -78,9 +69,9 @@
     KeyH: () => wrapSelection('\n# ', ''),
     KeyK: () => wrapSelection('[](', ')'),
     Enter: (e: any) => {
-      dispatcher('confirm', value)
+      onconfirm?.(value)
       const newEvent = new Event('submit', { cancelable: true })
-      e.target.form.dispatchEvent(newEvent)
+      e?.target?.form?.dispatchEvent(newEvent)
     },
   }
 
@@ -92,15 +83,50 @@
     }
   }
 
-  $: if (!previewing && value) adjustHeight()
+  interface Props extends TextAreaProps {
+    images?: boolean
+    value?: string
+    label?: string | undefined
+    previewButton?: boolean
+    tools?: boolean
+    disabled?: boolean
+    rows?: number
+    beforePreview?: (input: string) => string
+    previewing?: boolean
+    class?: string
+    customLabel?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+    onconfirm?: (value: string) => void
+  }
+
+  let {
+    images = true,
+    value = $bindable(''),
+    label = undefined,
+    previewButton = true,
+    tools = true,
+    disabled = false,
+    rows = 2,
+    beforePreview = (input) => input,
+    previewing = $bindable(false),
+    class: clazz = '',
+    customLabel,
+    children,
+    onconfirm,
+    ...rest
+  }: Props = $props()
+
+  $effect(() => {
+    if (!previewing && value) adjustHeight()
+  })
 </script>
 
 {#if uploadingImage && images}
   <ImageUploadModal
     bind:open={uploadingImage}
     bind:image
-    on:upload={(e) => {
-      e.detail.forEach((i) => {
+    onupload={(e) => {
+      e.forEach((i) => {
         wrapSelection(`![](${i})\n\n`, '')
       })
     }}
@@ -108,12 +134,12 @@
 {/if}
 
 <div>
-  {#if label || $$slots.label}
+  {#if label || customLabel}
     <Label>
       {#if label}
         {label}
-      {:else if $$slots.label}
-        <slot name="label" />
+      {:else if customLabel}
+        {@render customLabel?.()}
       {/if}
     </Label>
   {/if}
@@ -121,7 +147,7 @@
     class="flex flex-col border border-slate-200 border-b-slate-300 dark:border-t-zinc-700/70 dark:border-zinc-800
     focus-within:border-primary-900 focus-within:dark:border-primary-100 focus-within:ring ring-slate-300
     dark:ring-zinc-700 rounded-xl
-overflow-hidden transition-colors {$$props.class}"
+overflow-hidden transition-colors {clazz}"
     class:mt-1={label}
   >
     {#if previewing}
@@ -135,68 +161,68 @@ overflow-hidden transition-colors {$$props.class}"
         <!--Toolbar-->
         <div
           class="[&>*]:flex-shrink-0 flex flex-row overflow-auto p-1.5 gap-1.5 border-b
-          border-slate-200 dark:border-zinc-900 {$$props.disabled
+          border-slate-200 dark:border-zinc-900 {disabled
             ? 'opacity-60 pointer-events-none'
             : ''}"
         >
           <Button
-            on:click={() => wrapSelection('**', '**')}
+            onclick={() => wrapSelection('**', '**')}
             title="Bold"
             size="square-md"
           >
             <Icon src={Bold} size="16" mini />
           </Button>
           <Button
-            on:click={() => wrapSelection('*', '*')}
+            onclick={() => wrapSelection('*', '*')}
             title="Italic"
             size="square-md"
           >
             <Icon src={Italic} size="16" micro />
           </Button>
           <Button
-            on:click={() => wrapSelection('[', '](https://example.com)')}
+            onclick={() => wrapSelection('[', '](https://example.com)')}
             title="Link"
             size="square-md"
           >
             <Icon src={Link} size="16" micro />
           </Button>
           <Button
-            on:click={() => wrapSelection('\n# ', '')}
+            onclick={() => wrapSelection('\n# ', '')}
             title="Header"
             size="square-md"
           >
             <Icon src={H1} size="16" micro />
           </Button>
           <Button
-            on:click={() => wrapSelection('~~', '~~')}
+            onclick={() => wrapSelection('~~', '~~')}
             title="Strikethrough"
             size="square-md"
           >
             <Icon src={Strikethrough} size="16" micro />
           </Button>
           <Button
-            on:click={() => wrapSelection('\n> ', '')}
+            onclick={() => wrapSelection('\n> ', '')}
             title="Quote"
             size="square-md"
           >
             <span class="font-bold font-serif text-lg">"</span>
           </Button>
           <Button
-            on:click={() => wrapSelection('\n- ', '')}
+            onclick={() => wrapSelection('\n- ', '')}
             title="List"
             size="square-md"
           >
             <Icon src={ListBullet} micro size="16" />
           </Button>
           <Button
-            on:click={() => wrapSelection('`', '`')}
+            onclick={() => wrapSelection('`', '`')}
             title="Code"
             size="square-md"
           >
             <Icon src={CodeBracket} micro size="16" />
           </Button>
           <Button
-            on:click={() =>
+            onclick={() =>
               wrapSelection('::: spoiler <spoiler title>\n', '\n:::')}
             title="Spoiler"
             size="square-md"
@@ -204,7 +230,7 @@ overflow-hidden transition-colors {$$props.class}"
             <Icon src={ExclamationTriangle} micro size="16" />
           </Button>
           <Button
-            on:click={() => wrapSelection('~', '~')}
+            onclick={() => wrapSelection('~', '~')}
             title="Subscript"
             size="square-md"
           >
@@ -214,7 +240,7 @@ overflow-hidden transition-colors {$$props.class}"
             </span>
           </Button>
           <Button
-            on:click={() => wrapSelection('^', '^')}
+            onclick={() => wrapSelection('^', '^')}
             title="Superscript"
             size="square-md"
           >
@@ -225,7 +251,7 @@ overflow-hidden transition-colors {$$props.class}"
           </Button>
           {#if images}
             <Button
-              on:click={() => (uploadingImage = !uploadingImage)}
+              onclick={() => (uploadingImage = !uploadingImage)}
               title="Image"
               size="square-md"
             >
@@ -239,7 +265,7 @@ overflow-hidden transition-colors {$$props.class}"
         class="bg-inherit z-0 border-0 rounded-none !ring-0 focus:!ring-transparent !transition-none resize-none"
         bind:value
         bind:element={textArea}
-        on:keydown={(e) => {
+        onkeydown={(e) => {
           if (disabled) return
           if (e.ctrlKey || e.metaKey) {
             // @ts-ignore
@@ -250,9 +276,8 @@ overflow-hidden transition-colors {$$props.class}"
             }
           }
         }}
-        on:input={adjustHeight}
-        on:focus
-        on:paste={(e) => {
+        oninput={adjustHeight}
+        onpaste={(e) => {
           if (!e.clipboardData?.files) return
           const files = Array.from(e.clipboardData.files)
           if (files[0]?.type.startsWith('image/')) {
@@ -261,7 +286,7 @@ overflow-hidden transition-colors {$$props.class}"
           }
         }}
         {rows}
-        {...$$restProps}
+        {...rest}
       />
     {/if}
 
@@ -276,7 +301,7 @@ overflow-hidden transition-colors {$$props.class}"
             optionNames={[$t('form.edit'), $t('form.preview')]}
           />
         {/if}
-        <slot />
+        {@render children?.()}
       </div>
     {/if}
   </div>

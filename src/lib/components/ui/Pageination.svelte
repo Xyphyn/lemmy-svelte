@@ -1,47 +1,72 @@
 <script lang="ts">
   import { t } from '$lib/translations'
   import { Button } from 'mono-svelte'
-  import { createEventDispatcher } from 'svelte'
-  import {
-    ArrowLeft,
-    ArrowRight,
-    ChevronLeft,
-    ChevronRight,
-    Icon,
-  } from 'svelte-hero-icons'
+  import { ChevronLeft, ChevronRight, Icon } from 'svelte-hero-icons'
   import { backOut } from 'svelte/easing'
   import { fly } from 'svelte/transition'
+  import { page as pageData } from '$app/state'
+  import { invalidate } from '$app/navigation'
 
-  export let page: number = 0
-  export let cursor: { next?: string; back?: string } | undefined = undefined
-  export let hasMore: boolean = true
+  interface Props {
+    page?: number
+    cursor?: { next?: string; back?: string } | undefined
+    hasMore?: boolean
+    children?: import('svelte').Snippet
+    onchange?: (page: number) => void
+    onchangecursor?: (cursor: string) => void
+    href?: (current: number | string) => string
+  }
 
-  const dispatcher = createEventDispatcher<{ change: number; cursor: string }>()
+  let {
+    page = $bindable(0),
+    cursor = undefined,
+    hasMore = true,
+    children,
+    onchange,
+    onchangecursor,
+    href,
+  }: Props = $props()
+
+  let customHref = (href?: string) => {
+    if (href?.startsWith('?')) {
+      const current = new URLSearchParams(pageData.url.searchParams)
+      const newParams = new URLSearchParams(href)
+
+      current.delete(Array.from(newParams.keys())[0])
+      current.append(
+        Array.from(newParams.entries())[0][0],
+        Array.from(newParams.entries())[0][1],
+      )
+
+      return `?${current.toString()}`
+    } else return href
+  }
 </script>
 
 <nav
   aria-label={$t('aria.pagination.nav')}
   class="flex flex-row w-full gap-4 items-center justify-center"
 >
-  {#if $$slots.default}
+  {#if children}
     <span class="text-sm text-slate-600 dark:text-zinc-400 font-medium">
-      <slot />
+      {@render children?.()}
     </span>
     <hr class="border-slate-200 dark:border-zinc-800 flex-1" />
   {/if}
   <Button
+    href={customHref(href?.(cursor?.back ?? page - 1))}
     color="ghost"
-    on:click={() => {
-      if (cursor?.back) dispatcher('cursor', cursor?.back)
-      else dispatcher('change', --page)
-    }}
+    onclick={() => invalidate(pageData.url)}
     title={$t('common.back')}
     size="square-md"
     rounding="pill"
     class="text-inherit dark:text-inherit disabled:!opacity-20 disabled:!bg-transparent"
-    disabled={(!cursor?.back && cursor?.next) || page <= 1}
+    disabled={!!((!cursor?.back && cursor?.next) || page <= 1)}
+    data-sveltekit-preload-data="off"
   >
-    <Icon src={ChevronLeft} size="24" mini slot="suffix" />
+    {#snippet suffix()}
+      <Icon src={ChevronLeft} size="24" mini />
+    {/snippet}
   </Button>
 
   {#if page}
@@ -60,17 +85,18 @@
   {/if}
 
   <Button
+    href={customHref(href?.(cursor?.next ?? page + 1))}
     color="ghost"
-    on:click={() => {
-      if (cursor?.next) dispatcher('cursor', cursor?.next)
-      else dispatcher('change', ++page)
-    }}
+    onclick={() => invalidate(pageData.url)}
     title={$t('common.next')}
     size="square-md"
     rounding="pill"
     class="text-inherit dark:text-inherit"
     disabled={!hasMore}
+    data-sveltekit-preload-data="off"
   >
-    <Icon src={ChevronRight} size="24" mini slot="suffix" />
+    {#snippet suffix()}
+      <Icon src={ChevronRight} size="24" mini />
+    {/snippet}
   </Button>
 </nav>

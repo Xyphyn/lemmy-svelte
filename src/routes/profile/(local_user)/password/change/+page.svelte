@@ -1,15 +1,17 @@
 <script lang="ts">
-  import { deleteProfile, profile, setUser } from '$lib/auth'
-  import { client } from '$lib/lemmy'
-  import { instance as currentInstance } from '$lib/instance'
+  import { preventDefault } from 'svelte/legacy'
+
+  import { deleteProfile, profile, setUser } from '$lib/auth.svelte'
+  import { client } from '$lib/lemmy.svelte'
+  import { instance as currentInstance } from '$lib/instance.svelte'
   import { t } from '$lib/translations'
   import { Button, TextInput, toast } from 'mono-svelte'
   import { errorMessage } from '$lib/lemmy/error'
 
-  let oldPassword = '',
-    newPassword = '',
-    newPasswordVerify = ''
-  let loading = false
+  let oldPassword = $state(''),
+    newPassword = $state(''),
+    newPasswordVerify = $state('')
+  let loading = $state(false)
 
   async function changePassword() {
     try {
@@ -20,8 +22,8 @@
         old_password: oldPassword,
       })
       if (res?.jwt) {
-        const { instance, username } = $profile
-        deleteProfile($profile.id)
+        const { instance, username } = profile.data
+        deleteProfile(profile.data.id)
         await setUser(res.jwt, instance, username!)
         $currentInstance = instance
 
@@ -42,7 +44,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={changePassword} class="flex flex-col gap-4">
+<form onsubmit={preventDefault(changePassword)} class="flex flex-col gap-4">
   <TextInput
     bind:value={oldPassword}
     label={$t('form.profile.currentPassword')}

@@ -1,13 +1,6 @@
-import { profile } from '$lib/auth.js'
-import { getClient } from '$lib/lemmy.js'
-import type {
-  CommentSortType,
-  CommentView,
-  ListingType,
-  PostView,
-  SortType,
-} from 'lemmy-js-client'
-import { get } from 'svelte/store'
+import { profile } from '$lib/auth.svelte'
+import { getClient } from '$lib/lemmy.svelte.js'
+import type { CommentView, ListingType, PostView } from 'lemmy-js-client'
 
 function getSavedItemPublished(item: PostView | CommentView) {
   if ('comment' in item) {
@@ -18,7 +11,7 @@ function getSavedItemPublished(item: PostView | CommentView) {
 }
 
 export async function load({ url, fetch }) {
-  if (!get(profile)) return { posts: [], page: 0 }
+  if (!profile) return { posts: [], page: 0 }
   const page = Number(url.searchParams.get('page')) || 1
   const type: 'comments' | 'posts' | 'all' =
     (url.searchParams.get('type') as 'comments' | 'posts' | 'all') || 'all'
@@ -44,7 +37,7 @@ export async function load({ url, fetch }) {
   const everything = [...posts.posts, ...comments.comments].sort(
     (a, b) =>
       Date.parse(getSavedItemPublished(b)) -
-      Date.parse(getSavedItemPublished(a))
+      Date.parse(getSavedItemPublished(a)),
   )
 
   return { page: page, data: everything, type: type }

@@ -1,65 +1,58 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import type { Community, Person, PersonView } from 'lemmy-js-client'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import { toast } from 'mono-svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button, Checkbox, Modal, TextInput } from 'mono-svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { t } from '$lib/translations'
   import CommunityLink from '../community/CommunityLink.svelte'
+  import Duration from '$lib/components/form/Duration.svelte'
+  import SectionTitle from '$lib/components/ui/SectionTitle.svelte'
 
-  export let open = false
-  let item: Person | undefined
-  export { item as user }
-  export let community: Community | undefined
-  export let banned: boolean
+  interface Props {
+    open?: boolean
+    user: Person | undefined
+    community: Community | undefined
+    banned: boolean
+  }
 
-  let reason = ''
-  let deleteData = false
-  let expires = ''
+  let {
+    open = $bindable(false),
+    user: item = $bindable(),
+    community,
+    banned,
+  }: Props = $props()
 
-  let loading = false
+  let reason = $state('')
+  let deleteData = $state(false)
+  let expires = $state(-1)
+  let loading = $state(false)
 
   // hack due to svelte's reactive declarations
   const resetReason = () => {
     reason = ''
     deleteData = false
-    expires = ''
+    expires = -1
   }
 
-  $: if (item) resetReason()
+  $effect(() => {
+    if (item) resetReason()
+  })
 
   async function submit() {
-    if (!item || !$profile?.user || !$profile?.jwt) return
+    if (!item || !profile.data?.user || !profile.data?.jwt) return
 
     loading = true
 
     try {
       let date: number | undefined
 
-      if (expires != '') {
-        date = Date.parse(expires)
-        if (Number.isNaN(date)) {
-          toast({
-            content: $t('toast.invalidDateAbsolute'),
-            type: 'error',
-          })
-
-          loading = false
-
-          return
-        }
-
-        if (date < Date.now()) {
-          toast({
-            content: $t('toast.invalidDateBeforeCurrent'),
-            type: 'error',
-          })
-
-          loading = false
-          return
-        }
+      if (expires > 0) {
+        date = Math.floor(Date.now() / 1000) + expires
       }
 
       if (community) {
@@ -69,7 +62,7 @@
           person_id: item.id,
           reason: reason || undefined,
           remove_data: deleteData,
-          expires: date ? Math.floor(date / 1000) : undefined,
+          expires: date,
         })
       } else {
         await getClient().banPerson({
@@ -77,7 +70,7 @@
           person_id: item.id,
           reason: reason || undefined,
           remove_data: deleteData,
-          expires: date ? Math.floor(date / 1000) : undefined,
+          expires: date,
         })
       }
 
@@ -105,7 +98,7 @@
   title={banned ? $t('moderation.ban.unbanning') : $t('moderation.ban.banning')}
 >
   {#if item}
-    <form class="flex flex-col gap-4" on:submit|preventDefault={submit}>
+    <form class="flex flex-col gap-4" onsubmit={preventDefault(submit)}>
       <div class="flex items-center gap-1">
         <Avatar url={item.avatar} alt={item.name} width={24} />
         <span class="font-bold">{item.name}</span>
@@ -121,15 +114,14 @@
       {#if !banned}
         <Checkbox bind:checked={deleteData}>
           {$t('moderation.ban.deleteData')}
-          <svelte:fragment slot="description">
+          {#snippet description()}
             {$t('moderation.ban.warning')}
-          </svelte:fragment>
+          {/snippet}
         </Checkbox>
-        <TextInput
-          bind:value={expires}
-          label={$t('moderation.ban.expires')}
-          placeholder="2024 August 5"
-        />
+        <div>
+          <SectionTitle>{$t('moderation.ban.expires')}</SectionTitle>
+          <Duration bind:value={expires}></Duration>
+        </div>
       {/if}
       <Button submit color="primary" {loading} disabled={loading} size="lg">
         {$t('form.submit')}

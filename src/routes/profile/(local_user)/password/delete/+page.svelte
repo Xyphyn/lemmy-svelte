@@ -1,8 +1,8 @@
 <script lang="ts">
   import { goto } from '$app/navigation'
-  import { profileData, setUserID } from '$lib/auth'
+  import { profileData, setUserID } from '$lib/auth.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
-  import { client } from '$lib/lemmy'
+  import { client } from '$lib/lemmy.svelte'
   import { t } from '$lib/translations'
   import {
     Button,
@@ -15,11 +15,11 @@
     toast,
   } from 'mono-svelte'
 
-  let deletion = {
+  let deletion = $state({
     modal: false,
     password: '',
     deleteContent: false,
-  }
+  })
 
   async function deleteAccount(level: number) {
     switch (level) {
@@ -70,14 +70,9 @@
         delete_content: deletion.deleteContent,
       })
 
-      profileData.update((pd) => {
-        pd.profiles.splice(
-          pd.profiles.findIndex((p) => pd.profile == p.id),
-          1
-        )
-
-        return pd
-      })
+      profileData.profiles.splice(
+        profileData.profiles.findIndex((p) => profileData.profile == p.id),
+      )
 
       setUserID(-1)
       toast({
@@ -99,9 +94,11 @@
   <Modal
     bind:open={deletion.modal}
     action="Submit"
-    on:action={() => deleteAccount(4)}
+    onaction={() => deleteAccount(4)}
   >
-    <span slot="title">{$t('form.profile.deleteAccount.label')}</span>
+    {#snippet customTitle()}
+      <span>{$t('form.profile.deleteAccount.label')}</span>
+    {/snippet}
     <TextInput
       label={$t('form.password')}
       type="password"
@@ -109,9 +106,11 @@
     />
     <Checkbox bind:checked={deletion.deleteContent}>
       {$t('form.profile.deleteAccount.deleteContent')}
-      <span slot="description">
-        {$t('form.profile.deleteAccount.warning')}
-      </span>
+      {#snippet description()}
+        <span>
+          {$t('form.profile.deleteAccount.warning')}
+        </span>
+      {/snippet}
     </Checkbox>
   </Modal>
 {/if}
@@ -130,11 +129,13 @@
   </p>
   <Switch bind:checked={deletion.deleteContent}>
     {$t('form.profile.deleteAccount.deleteContent')}
-    <span slot="description">
-      {$t('form.profile.deleteAccount.warning')}
-    </span>
+    {#snippet description()}
+      <span>
+        {$t('form.profile.deleteAccount.warning')}
+      </span>
+    {/snippet}
   </Switch>
-  <Button size="lg" color="danger" on:click={() => deleteAccount(3)}>
+  <Button size="lg" color="danger" onclick={() => deleteAccount(3)}>
     {$t('routes.profile.delete.title')}
   </Button>
 </Material>

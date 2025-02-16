@@ -1,6 +1,11 @@
 <script lang="ts">
-  export let object: any
-  export let isParent: boolean = false
+  import DebugTree from './DebugTree.svelte'
+  interface Props {
+    object: any
+    isParent?: boolean
+  }
+
+  let { object, isParent = false }: Props = $props()
 </script>
 
 <ul class:ml-4={!isParent} class="leading-8">
@@ -10,7 +15,7 @@
         <code>{key}</code>
       </summary>
       {#if typeof object[key] === 'object'}
-        <svelte:self object={object[key]} isParent={false} />
+        <DebugTree object={object[key]} isParent={false} />
       {:else}
         <pre class="break-words">{object[key]}</pre>
       {/if}

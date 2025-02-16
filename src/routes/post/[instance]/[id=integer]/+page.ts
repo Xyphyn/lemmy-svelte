@@ -1,13 +1,8 @@
-import { browser } from '$app/environment'
-import { env } from '$env/dynamic/public'
-import { profile } from '$lib/auth.js'
 import CommunityCard from '$lib/components/lemmy/community/CommunityCard.svelte'
-import { getClient } from '$lib/lemmy.js'
+import { getClient } from '$lib/lemmy.svelte.js'
 import { awaitIfServer } from '$lib/promise.js'
-import { SSR_ENABLED, userSettings } from '$lib/settings.js'
-import { error } from '@sveltejs/kit'
+import { SSR_ENABLED, settings } from '$lib/settings.svelte'
 import type { GetComments } from 'lemmy-js-client'
-import { get } from 'svelte/store'
 
 export async function load({ params, url, fetch }) {
   const thread = url.searchParams.get('thread')
@@ -35,7 +30,7 @@ export async function load({ params, url, fetch }) {
     max_depth = 10
   }
 
-  const sort = get(userSettings)?.defaultSort?.comments ?? 'Hot'
+  const sort = settings?.defaultSort?.comments ?? 'Hot'
 
   const commentParams: GetComments = {
     post_id: Number(params.id),

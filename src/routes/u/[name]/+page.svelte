@@ -15,20 +15,19 @@
   } from 'svelte-hero-icons'
   import CommentItem from '$lib/components/lemmy/comment/CommentItem.svelte'
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import { goto } from '$app/navigation'
   import { isCommentView } from '$lib/lemmy/item.js'
-  import { client, getClient } from '$lib/lemmy.js'
+  import { client, getClient } from '$lib/lemmy.svelte.js'
   import { isBlocked } from '$lib/lemmy/user.js'
   import { Menu, MenuButton, removeToast, toast } from 'mono-svelte'
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { ban, isAdmin } from '$lib/components/lemmy/moderation/moderation.js'
   import ShieldIcon from '$lib/components/lemmy/moderation/ShieldIcon.svelte'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { Button, Modal, Select } from 'mono-svelte'
-  import PrivateMessageModal from '$lib/components/lemmy/modal/PrivateMessageModal.svelte'
   import Expandable from '$lib/components/ui/Expandable.svelte'
   import { communityLink } from '$lib/lemmy/generic.js'
   import ItemList from '$lib/components/lemmy/generic/ItemList.svelte'
@@ -36,18 +35,29 @@
   import EntityHeader from '$lib/components/ui/EntityHeader.svelte'
   import { publishedToDate } from '$lib/components/util/date.js'
   import { formatRelativeDate } from '$lib/components/util/RelativeDate.svelte'
+  import Option from 'mono-svelte/forms/select/Option.svelte'
+  import type { PageData } from './$types'
+  import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data
-  export let inline: boolean = false
+  interface Props {
+    data: PageData
+    inline?: boolean
+  }
+
+  let { data: pageData, inline = false }: Props = $props()
+
+  let data = $state(pageData)
 
   let blocking = false
+  let sortForm = $state<HTMLFormElement>()
 
   async function blockUser(block: number) {
-    if (!$profile?.user || !$profile?.jwt) throw new Error('Unauthenticated')
+    if (!profile.data?.user || !profile.data?.jwt)
+      throw new Error('Unauthenticated')
 
     blocking = true
     try {
-      const blocked = isBlocked($profile.user, block)
+      const blocked = isBlocked(profile.data.user, block)
 
       await getClient().blockPerson({
         block: !blocked,
@@ -55,10 +65,10 @@
       })
 
       if (blocked) {
-        const index = $profile.user.person_blocks
+        const index = profile.data.user.person_blocks
           .map((p) => p.target.id)
           .indexOf(block)
-        $profile.user.person_blocks.splice(index, 1)
+        profile.data.user.person_blocks.splice(index, 1)
       }
 
       toast({
@@ -66,7 +76,7 @@
         type: 'success',
       })
 
-      goto($page.url, {
+      goto(page.url, {
         invalidateAll: true,
       })
     } catch (err) {
@@ -78,16 +88,18 @@
     blocking = false
   }
 
-  let messaging = false
+  let messaging = $state(false)
 
-  let purgingUser = false
-  let purgeEnabled = false
-  $: if (purgingUser) {
-    purgeEnabled = false
-    setTimeout(() => {
-      purgeEnabled = true
-    }, 3000)
-  }
+  let purgingUser = $state(false)
+  let purgeEnabled = $state(false)
+  $effect(() => {
+    if (purgingUser) {
+      purgeEnabled = false
+      setTimeout(() => {
+        purgeEnabled = true
+      }, 3000)
+    }
+  })
 
   async function purgeUser() {
     purgingUser = false
@@ -109,16 +121,11 @@
   <title>{data.person_view.person.name}</title>
 </svelte:head>
 
-{#if $profile?.user}
-  <PrivateMessageModal
-    bind:user={data.person_view.person}
-    bind:open={messaging}
-  />
-{/if}
-
 {#if purgingUser}
   <Modal bind:open={purgingUser}>
-    <svelte:fragment slot="title">Purging User</svelte:fragment>
+    {#snippet customTitle()}
+      Purging User
+    {/snippet}
     <p>
       Purging user <span class="font-bold">
         {data.person_view.person.name}
@@ -128,13 +135,13 @@
       Are you sure you want to do this? (The button will enable in 3 seconds.)
     </p>
     <div class="flex flex-row gap-2">
-      <Button size="lg" on:click={() => (purgingUser = false)} class="flex-1">
+      <Button size="lg" onclick={() => (purgingUser = false)} class="flex-1">
         Cancel
       </Button>
       <Button
         size="lg"
         color="danger"
-        on:click={purgeUser}
+        onclick={purgeUser}
         disabled={!purgeEnabled}
         class="flex-1"
       >
@@ -146,161 +153,186 @@
 
 <div class="flex flex-col gap-4 max-w-full w-full">
   {#if !inline}
-    <div class="">
-      <EntityHeader
-        avatar={data.person_view.person.avatar}
-        name={data.person_view.person.display_name ||
-          data.person_view.person.name}
-        banner={data.person_view.person.banner}
-        bio={data.person_view.person.bio}
-        stats={[
-          {
-            name: $t('content.posts'),
-            value: data.person_view.counts.post_count.toString(),
-          },
-          {
-            name: $t('content.comments'),
-            value: data.person_view.counts.comment_count.toString(),
-          },
-          {
-            name: $t('stats.joined'),
-            value: formatRelativeDate(
-              publishedToDate(data.person_view.person.published),
-              { style: 'short' }
-            ).toString(),
-            format: false,
-          },
-        ]}
-      >
-        <span class="text-sm flex gap-0 items-center w-max" slot="nameDetail">
-          @
-          <UserLink
-            showInstance
-            user={data.person_view.person}
-            displayName={false}
-            class="font-normal"
-          />
-        </span>
-        {#if (data.moderates ?? []).length > 0}
-          <Expandable
-            class="border rounded-xl bg-white/50 dark:bg-zinc-900/50 w-full p-3 px-4
-      dark:border-zinc-800 border-slate-300 border-opacity-50 text-slate-700 dark:text-zinc-300 transition-colors"
-          >
-            <span slot="title" class="flex items-center gap-1">
-              <ShieldIcon width={14} filled />
-              {$t('routes.profile.moderates')}
+    <Header pageHeader>
+      <div class="w-full">
+        <EntityHeader
+          avatar={data.person_view.person.avatar}
+          name={data.person_view.person.display_name ||
+            data.person_view.person.name}
+          banner={data.person_view.person.banner}
+          bio={data.person_view.person.bio}
+          stats={[
+            {
+              name: $t('content.posts'),
+              value: data.person_view.counts.post_count.toString(),
+            },
+            {
+              name: $t('content.comments'),
+              value: data.person_view.counts.comment_count.toString(),
+            },
+            {
+              name: $t('stats.joined'),
+              value: formatRelativeDate(
+                publishedToDate(data.person_view.person.published),
+                { style: 'short' },
+              ).toString(),
+              format: false,
+            },
+          ]}
+        >
+          {#snippet nameDetail()}
+            <span class="text-sm flex gap-0 items-center w-max">
+              @
+              <UserLink
+                showInstance
+                user={data.person_view.person}
+                displayName={false}
+                class="font-normal"
+              />
             </span>
-            <ItemList
-              items={data.moderates.map((m) => ({
-                id: m.community.id,
-                name: m.community.title,
-                url: communityLink(m.community),
-                avatar: m.community.icon,
-                instance: new URL(m.community.actor_id).hostname,
-              }))}
-            />
-          </Expandable>
-        {/if}
-        <svelte:fragment slot="actions">
-          {#if $profile?.user && $profile.jwt && data.person_view.person.id != $profile.user.local_user_view.person.id}
-            <div class="flex items-center gap-2 w-full">
-              <Button
-                size="square-md"
-                color="secondary"
-                href="/inbox/messages/{data.person_view.person.id}"
-                title="Message"
-              >
-                <Icon slot="prefix" solid size="16" src={Envelope} />
-              </Button>
-              {#if data.person_view.person.matrix_user_id}
+          {/snippet}
+          {#if (data.moderates ?? []).length > 0}
+            <Expandable class="">
+              {#snippet title()}
+                {$t('routes.profile.moderates')}
+                <hr
+                  class="flex-1 w-full border-slate-200 dark:border-zinc-800 mx-3"
+                />
+              {/snippet}
+              <ItemList
+                items={data.moderates.map((m) => ({
+                  id: m.community.id,
+                  name: m.community.title,
+                  url: communityLink(m.community),
+                  avatar: m.community.icon,
+                  instance: new URL(m.community.actor_id).hostname,
+                }))}
+              />
+            </Expandable>
+          {/if}
+          {#snippet actions()}
+            {#if profile.data?.user && profile.data.jwt && data.person_view.person.id != profile.data.user.local_user_view.person.id}
+              <div class="flex items-center gap-2 w-full">
                 <Button
                   size="square-md"
                   color="secondary"
-                  href="https://matrix.to/#/{data.person_view.person
-                    .matrix_user_id}"
-                  title="Matrix User"
+                  href="/inbox/messages/{data.person_view.person.id}"
+                  title="Message"
                 >
-                  <Icon slot="prefix" solid size="16" src={AtSymbol} />
+                  {#snippet prefix()}
+                    <Icon solid size="16" src={Envelope} />
+                  {/snippet}
                 </Button>
-              {/if}
-              {#if isAdmin($profile?.user)}
-                <Menu class="ml-auto" placement="bottom-end">
-                  <Button size="square-md" slot="target">
-                    <ShieldIcon width={16} filled />
+                {#if data.person_view.person.matrix_user_id}
+                  <Button
+                    size="square-md"
+                    color="secondary"
+                    href="https://matrix.to/#/{data.person_view.person
+                      .matrix_user_id}"
+                    title="Matrix User"
+                  >
+                    {#snippet prefix()}
+                      <Icon solid size="16" src={AtSymbol} />
+                    {/snippet}
                   </Button>
+                {/if}
+                {#if isAdmin(profile.data?.user)}
+                  <Menu class="ml-auto" placement="bottom-end">
+                    {#snippet target()}
+                      <Button size="square-md">
+                        <ShieldIcon width={16} filled />
+                      </Button>
+                    {/snippet}
+                    <MenuButton
+                      color="danger-subtle"
+                      onclick={() =>
+                        ban(
+                          data.person_view.person.banned,
+                          data.person_view.person,
+                        )}
+                    >
+                      {#snippet prefix()}
+                        <Icon mini size="16" src={ShieldExclamation} />
+                      {/snippet}
+                      {data.person_view.person.banned ? 'Unban' : 'Ban'}
+                    </MenuButton>
+                    <MenuButton
+                      color="danger-subtle"
+                      onclick={() => (purgingUser = !purgingUser)}
+                    >
+                      {#snippet prefix()}
+                        <Icon mini size="16" src={Fire} />
+                      {/snippet}
+                      Purge
+                    </MenuButton>
+                  </Menu>
+                {/if}
+                <Menu placement="bottom-end">
+                  {#snippet target()}
+                    <Button size="square-md">
+                      {#snippet prefix()}
+                        <Icon src={EllipsisHorizontal} size="16" mini />
+                      {/snippet}
+                    </Button>
+                  {/snippet}
                   <MenuButton
                     color="danger-subtle"
-                    on:click={() =>
-                      ban(
-                        data.person_view.person.banned,
-                        data.person_view.person
-                      )}
+                    onclick={() => blockUser(data.person_view.person.id)}
                   >
-                    <Icon
-                      slot="prefix"
-                      mini
-                      size="16"
-                      src={ShieldExclamation}
-                    />
-                    {data.person_view.person.banned ? 'Unban' : 'Ban'}
-                  </MenuButton>
-                  <MenuButton
-                    color="danger-subtle"
-                    on:click={() => (purgingUser = !purgingUser)}
-                  >
-                    <Icon slot="prefix" mini size="16" src={Fire} />
-                    Purge
+                    {#snippet prefix()}
+                      <Icon mini size="16" src={NoSymbol} />
+                    {/snippet}
+                    {isBlocked(profile.data.user, data.person_view.person.id)
+                      ? 'Unblock'
+                      : 'Block'}
                   </MenuButton>
                 </Menu>
-              {/if}
-              <Menu placement="bottom-end">
-                <Button size="square-md" slot="target">
-                  <Icon src={EllipsisHorizontal} slot="prefix" size="16" mini />
-                </Button>
-                <MenuButton
-                  color="danger-subtle"
-                  on:click={() => blockUser(data.person_view.person.id)}
-                >
-                  <Icon slot="prefix" mini size="16" src={NoSymbol} />
-                  {isBlocked($profile.user, data.person_view.person.id)
-                    ? 'Unblock'
-                    : 'Block'}
-                </MenuButton>
-              </Menu>
-            </div>
-          {/if}
-        </svelte:fragment>
-      </EntityHeader>
-    </div>
+              </div>
+            {/if}
+          {/snippet}
+        </EntityHeader>
+      </div>
+    </Header>
   {/if}
 
   <div class="flex flex-col gap-4 max-w-full w-full min-w-0">
-    <div class="flex flex-row gap-4 flex-wrap">
+    <form
+      action={page.url.origin + page.url.pathname}
+      method="GET"
+      class="flex flex-row gap-4 flex-wrap"
+      bind:this={sortForm}
+    >
       <Select
         bind:value={data.type}
-        on:change={() => searchParam($page.url, 'type', data.type, 'page')}
+        name="type"
+        onchange={() => sortForm?.requestSubmit()}
       >
-        <span slot="label" class="flex items-center gap-1">
-          <Icon src={AdjustmentsHorizontal} size="15" mini />
-          {$t('filter.type')}
-        </span>
-        <option value="all">{$t('content.all')}</option>
-        <option value="posts">{$t('content.posts')}</option>
-        <option value="comments">{$t('content.comments')}</option>
+        {#snippet customLabel()}
+          <span class="flex items-center gap-1">
+            <Icon src={AdjustmentsHorizontal} size="15" mini />
+            {$t('filter.type')}
+          </span>
+        {/snippet}
+        <Option value="all">{$t('content.all')}</Option>
+        <Option value="posts">{$t('content.posts')}</Option>
+        <Option value="comments">{$t('content.comments')}</Option>
       </Select>
       <Select
         bind:value={data.sort}
-        on:change={() => searchParam($page.url, 'sort', data.sort, 'page')}
+        name="sort"
+        onchange={() => sortForm?.requestSubmit()}
       >
-        <span slot="label" class="flex items-center gap-1">
-          <Icon src={ChartBar} size="14" mini />
-          {$t('filter.sort.label')}
-        </span>
-        <option value="New">{$t('filter.sort.new')}</option>
-        <option value="TopAll">{$t('filter.sort.top.label')}</option>
-        <option value="Old">{$t('filter.sort.old')}</option>
+        {#snippet customLabel()}
+          <span class="flex items-center gap-1">
+            <Icon src={ChartBar} size="14" mini />
+            {$t('filter.sort.label')}
+          </span>
+        {/snippet}
+        <Option value="New">{$t('filter.sort.new')}</Option>
+        <Option value="TopAll">{$t('filter.sort.top.label')}</Option>
+        <Option value="Old">{$t('filter.sort.old')}</Option>
       </Select>
-    </div>
+    </form>
     {#if data.items.length == 0}
       <Placeholder
         icon={PencilSquare}
@@ -320,9 +352,6 @@
         {/each}
       </div>
     {/if}
-    <Pageination
-      page={data.page}
-      on:change={(p) => searchParam($page.url, 'page', p.detail.toString())}
-    />
+    <Pageination page={data.page} href={(page) => `?page=${page}`} />
   </div>
 </div>

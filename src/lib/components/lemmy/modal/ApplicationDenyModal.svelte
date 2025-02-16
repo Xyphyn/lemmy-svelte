@@ -1,16 +1,25 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { t } from '$lib/translations'
   import type { Person } from 'lemmy-js-client'
   import { Button, Modal } from 'mono-svelte'
 
-  export let open: boolean = false
-  export let user: Person
+  interface Props {
+    open?: boolean
+    user: Person
+    denying: boolean
+    denyReason?: string
+  }
 
-  export let denying: boolean
-
-  export let denyReason: string = ''
+  let {
+    open = $bindable(false),
+    user,
+    denying = $bindable(),
+    denyReason = $bindable(''),
+  }: Props = $props()
 
   let loading = false
 
@@ -21,10 +30,12 @@
 </script>
 
 <Modal bind:open>
-  <h1 class="text-2xl font-bold" slot="title">
-    {$t('routes.admin.applications.modalTitle')}
-  </h1>
-  <form on:submit|preventDefault={() => deny()} class="flex flex-col gap-4">
+  {#snippet customTitle()}
+    <h1 class="text-2xl font-bold">
+      {$t('routes.admin.applications.modalTitle')}
+    </h1>
+  {/snippet}
+  <form onsubmit={preventDefault(() => deny())} class="flex flex-col gap-4">
     <UserLink avatar {user} />
     <MarkdownEditor
       bind:value={denyReason}

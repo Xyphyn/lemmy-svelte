@@ -1,36 +1,38 @@
 import { type GetSiteResponse, LemmyHttp } from 'lemmy-js-client'
 import { get, writable } from 'svelte/store'
 import { error } from '@sveltejs/kit'
-import { instance } from '$lib/instance.js'
-import { instanceToURL } from '$lib/util.js'
-import { profile } from '$lib/auth.js'
+import { DEFAULT_INSTANCE_URL, instance } from '$lib/instance.svelte.js'
+import { instanceToURL } from '$lib/util.svelte'
+import { profile } from '$lib/auth.svelte'
 import { toast } from 'mono-svelte'
 
-export const site = writable<GetSiteResponse | undefined>(undefined)
+class SiteData {
+  #data = $state<GetSiteResponse>()
+
+  get data() {
+    return this.#data
+  }
+
+  set data(value) {
+    this.#data = value
+  }
+}
+
+export const site = new SiteData()
 
 const isURL = (input: RequestInfo | URL): input is URL =>
   typeof input == 'object' && 'searchParams' in input
-
-const toURL = (input: RequestInfo | URL): URL | undefined => {
-  if (isURL(input)) return input
-
-  try {
-    return new URL(input.toString())
-  } catch (e) {
-    return
-  }
-}
 
 async function customFetch(
   func:
     | ((
         input: RequestInfo | URL,
-        init?: RequestInit | undefined
+        init?: RequestInit | undefined,
       ) => Promise<Response>)
     | undefined,
   input: RequestInfo | URL,
   init?: RequestInit | undefined,
-  auth?: string
+  auth?: string,
 ): Promise<Response> {
   const f = func ? func : fetch
 
@@ -63,13 +65,13 @@ export function client({
   instanceURL?: string
   func?: (
     input: RequestInfo | URL,
-    init?: RequestInit | undefined
+    init?: RequestInit | undefined,
   ) => Promise<Response>
   auth?: string
 } = {}) {
-  if (!instanceURL) instanceURL = get(profile).instance
+  if (!instanceURL) instanceURL = profile.data.instance || DEFAULT_INSTANCE_URL
 
-  let jwt = auth ? auth : get(profile)?.jwt
+  let jwt = auth ? auth : profile.data?.jwt
 
   const headers = jwt ? { authorization: `Bearer ${jwt}` } : {}
 
@@ -84,14 +86,12 @@ export function getClient(
   instanceURL?: string,
   func?: (
     input: RequestInfo | URL,
-    init?: RequestInit | undefined
+    init?: RequestInit | undefined,
   ) => Promise<Response>,
-  auth?: string
+  auth?: string,
 ): LemmyHttp {
   return client({ instanceURL, func, auth })
 }
-
-export const getInstance = () => encodeURIComponent(get(instance))
 
 export async function validateInstance(instance: string): Promise<boolean> {
   if (instance == '') return false
@@ -107,7 +107,7 @@ export async function validateInstance(instance: string): Promise<boolean> {
 
 export function mayBeIncompatible(
   minVersion: string,
-  availableVersion: string
+  availableVersion: string,
 ) {
   if (minVersion.valueOf() === availableVersion.valueOf()) return false
 

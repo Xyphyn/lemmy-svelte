@@ -1,9 +1,14 @@
 <script lang="ts">
-  export let width: number = 16
+  interface Props {
+    width?: number
+    [key: string]: any
+  }
+
+  let { width = 16, ...rest }: Props = $props()
 </script>
 
 <svg
-  {...$$restProps}
+  {...rest}
   {width}
   height={width}
   stroke="currentColor"

@@ -1,14 +1,16 @@
 <script lang="ts">
+  import { run, preventDefault } from 'svelte/legacy'
+
   import Comment from '$lib/components/lemmy/comment/Comment.svelte'
   import Post from '$lib/components/lemmy/post/Post.svelte'
   import { toast } from 'mono-svelte'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import type {
     CommentView,
     PostView,
     PrivateMessageView,
   } from 'lemmy-js-client'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { Button, Modal } from 'mono-svelte'
   import MarkdownEditor from '$lib/components/markdown/MarkdownEditor.svelte'
   import { onMount } from 'svelte'
@@ -16,27 +18,30 @@
   import { t } from '$lib/translations'
   import PrivateMessage from '../inbox/PrivateMessage.svelte'
 
-  export let open: boolean
-  export let item: PostView | CommentView | PrivateMessageView | undefined =
-    undefined
+  interface Props {
+    open: boolean
+    item?: PostView | CommentView | PrivateMessageView | undefined
+  }
+
+  let { open = $bindable(), item = $bindable() }: Props = $props()
 
   const isComment = (
-    item: PostView | CommentView | PrivateMessageView
+    item: PostView | CommentView | PrivateMessageView,
   ): item is CommentView => 'comment' in item
 
   const isPost = (
-    item: PostView | CommentView | PrivateMessageView
+    item: PostView | CommentView | PrivateMessageView,
   ): item is PostView => !isComment(item) && 'post' in item
 
   const isPrivateMessage = (
-    item: PostView | CommentView | PrivateMessageView
+    item: PostView | CommentView | PrivateMessageView,
   ): item is PrivateMessageView => !isComment(item) && 'private_message' in item
 
-  let loading = false
-  let reason = ''
+  let loading = $state(false)
+  let reason = $state('')
 
   async function report() {
-    if (!item || !$profile?.jwt || reason == '') return
+    if (!item || !profile.data?.jwt || reason == '') return
     loading = true
 
     try {
@@ -70,15 +75,15 @@
 
   const resetText = () => (reason = '')
 
-  $: {
+  run(() => {
     if (item) {
       resetText()
     }
-  }
+  })
 </script>
 
 <Modal bind:open title={$t('moderation.reportModal.title')}>
-  <form class="flex flex-col gap-4" on:submit|preventDefault={report}>
+  <form class="flex flex-col gap-4" onsubmit={preventDefault(report)}>
     {#if item}
       <div class="pointer-events-none list-none">
         {#if isComment(item)}

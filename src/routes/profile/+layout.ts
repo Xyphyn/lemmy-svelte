@@ -1,5 +1,5 @@
-import { profile } from '$lib/auth.js'
-import { client, getClient } from '$lib/lemmy.js'
+import { profile } from '$lib/auth.svelte'
+import { client, getClient } from '$lib/lemmy.svelte.js'
 import { getItemPublished } from '$lib/lemmy/item.js'
 import type { SortType } from 'lemmy-js-client'
 import { get } from 'svelte/store'
@@ -9,8 +9,8 @@ export let ssr = false
 
 export async function load({ params, url, fetch }) {
   const my_user =
-    get(profile)?.user ??
-    (await client({ auth: get(profile)?.jwt, func: fetch }).getSite()).my_user
+    // profile.data?.user ??
+    (await client({ auth: profile.data?.jwt, func: fetch }).getSite()).my_user
 
   return {
     my_user: my_user,

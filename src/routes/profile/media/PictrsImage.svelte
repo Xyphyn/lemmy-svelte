@@ -1,22 +1,20 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte'
   import { publishedToDate } from '$lib/components/util/date'
   import RelativeDate from '$lib/components/util/RelativeDate.svelte'
-  import { instance } from '$lib/instance'
-  import { client } from '$lib/lemmy'
+  import { instance } from '$lib/instance.svelte'
+  import { client } from '$lib/lemmy.svelte'
   import { t } from '$lib/translations'
-  import { instanceToURL } from '$lib/util'
+  import { instanceToURL } from '$lib/util.svelte'
   import type { LocalImage } from 'lemmy-js-client'
   import { Button, Material, toast } from 'mono-svelte'
   import { createEventDispatcher } from 'svelte'
   import { ArrowDown, ArrowDownTray, Icon, Trash } from 'svelte-hero-icons'
 
-  const dispatch = createEventDispatcher<{ delete: boolean }>()
-
-  let loading = false
+  let loading = $state(false)
 
   async function deleteImage(image: LocalImage) {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     try {
       loading = true
@@ -25,19 +23,24 @@
         filename: image.pictrs_alias,
       })
 
-      dispatch('delete', res)
+      ondelete?.(res)
     } catch (e) {
       toast({ content: e as any, type: 'error' })
     }
     loading = false
   }
 
-  export let image: LocalImage
+  interface Props {
+    image: LocalImage
+    ondelete?: (res: boolean) => void
+  }
+
+  let { image, ondelete }: Props = $props()
 </script>
 
 <div class="flex flex-col gap-1">
   <img
-    src="{instanceToURL($instance)}/pictrs/image/{image.pictrs_alias}"
+    src="{instanceToURL(instance.data)}/pictrs/image/{image.pictrs_alias}"
     width="500"
     height="500"
     class="aspect-square w-full h-full object-cover rounded-xl"
@@ -50,20 +53,24 @@
     />
     <Button
       title={$t('routes.profile.media.download')}
-      href="{instanceToURL($instance)}/pictrs/image/{image.pictrs_alias}"
+      href="{instanceToURL(instance.data)}/pictrs/image/{image.pictrs_alias}"
       size="square-md"
       class="ml-auto"
     >
-      <Icon src={ArrowDownTray} size="16" mini slot="prefix" />
+      {#snippet prefix()}
+        <Icon src={ArrowDownTray} size="16" mini />
+      {/snippet}
     </Button>
     <Button
       title={$t('post.actions.more.delete')}
-      on:click={() => deleteImage(image)}
+      onclick={() => deleteImage(image)}
       size="square-md"
       {loading}
       disabled={loading}
     >
-      <Icon src={Trash} size="16" mini slot="prefix" color="text-red-500" />
+      {#snippet prefix()}
+        <Icon src={Trash} size="16" mini color="text-red-500" />
+      {/snippet}
     </Button>
   </div>
 </div>

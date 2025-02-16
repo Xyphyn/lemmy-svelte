@@ -9,14 +9,14 @@
     Icon,
     Inbox,
   } from 'svelte-hero-icons'
-  import { getClient } from '$lib/lemmy.js'
+  import { getClient } from '$lib/lemmy.svelte.js'
   import { goto } from '$app/navigation'
-  import { page } from '$app/stores'
+  import { page } from '$app/state'
   import Pageination from '$lib/components/ui/Pageination.svelte'
-  import { notifications, profile } from '$lib/auth.js'
+  import { notifications, profile } from '$lib/auth.svelte.js'
   import Placeholder from '$lib/components/ui/Placeholder.svelte'
   import { fly } from 'svelte/transition'
-  import { searchParam } from '$lib/util.js'
+  import { searchParam } from '$lib/util.svelte.js'
   import { Button, Select } from 'mono-svelte'
   import EndPlaceholder from '$lib/components/ui/EndPlaceholder.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
@@ -25,12 +25,17 @@
   import { contentPadding } from '$lib/components/ui/layout/Shell.svelte'
   import { expoOut } from 'svelte/easing'
 
-  export let data
+  let { data } = $props()
 
-  let markingAsRead = false
+  let inbox = $state(data.data)
+  $effect(() => {
+    inbox = data.data
+  })
+
+  let markingAsRead = $state(false)
 
   async function markAllAsRead() {
-    if (!$profile?.user) {
+    if (!profile.data?.user) {
       goto('/login')
       return
     }
@@ -41,7 +46,7 @@
 
     $notifications.inbox = 0
 
-    goto($page.url, {
+    goto(page.url, {
       invalidateAll: true,
     }).then(() => {
       markingAsRead = false
@@ -52,7 +57,7 @@
 
   function addSearchParam(
     currentSearchParams: URLSearchParams,
-    newParamString: string
+    newParamString: string,
   ) {
     // Create a new URLSearchParams object from the current search params
     const updatedParams = new URLSearchParams(currentSearchParams)
@@ -99,17 +104,17 @@ items-center px-2 w-max"
           name: $t('filter.inbox.messages'),
         },
       ]}
-      currentRoute={$page.url.search}
+      currentRoute={page.url.search}
       isSelected={(url, current, route, def) =>
-        $page.url.search == route ||
-        ($page.url.pathname == route && $page.url.search == '') ||
-        $page.url.searchParams.toString().includes(route.slice(1)) ||
-        ($page.url.search == '' && route == def)}
+        page.url.search == route ||
+        (page.url.pathname == route && page.url.search == '') ||
+        page.url.searchParams.toString().includes(route.slice(1)) ||
+        (page.url.search == '' && route == def)}
       class="overflow-auto w-full"
       buildUrl={(route, href) =>
         href.includes('?')
-          ? '?' + addSearchParam($page.url.searchParams, href).toString()
-          : `${href}${$page.url.search}`}
+          ? '?' + addSearchParam(page.url.searchParams, href).toString()
+          : `${href}${page.url.search}`}
       defaultRoute="?type=All"
     />
     <Tabs
@@ -124,10 +129,10 @@ items-center px-2 w-max"
         },
       ]}
       isSelected={(url, current, route, def) =>
-        $page.url.searchParams.toString().includes(route.slice(1)) ||
-        ($page.url.search == '' && route == def)}
+        page.url.searchParams.toString().includes(route.slice(1)) ||
+        (page.url.search == '' && route == def)}
       buildUrl={(route, href) =>
-        '?' + addSearchParam($page.url.searchParams, href).toString()}
+        '?' + addSearchParam(page.url.searchParams, href).toString()}
       defaultRoute="?unreadOnly=true"
     />
   </div>
@@ -136,21 +141,25 @@ items-center px-2 w-max"
 
     <div class="flex items-center gap-2">
       <Button
-        on:click={() => goto($page.url, { invalidateAll: true })}
+        onclick={() => goto(page.url, { invalidateAll: true })}
         size="square-lg"
         rounding="xl"
         title={$t('common.refresh')}
       >
-        <Icon src={ArrowPath} size="16" mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={ArrowPath} size="16" mini />
+        {/snippet}
       </Button>
       <Button
-        on:click={markAllAsRead}
+        onclick={markAllAsRead}
         loading={markingAsRead}
         disabled={markingAsRead}
         size="lg"
         class="h-10"
       >
-        <Icon src={Check} width={16} mini slot="prefix" />
+        {#snippet prefix()}
+          <Icon src={Check} width={16} mini />
+        {/snippet}
         {$t('routes.inbox.markAsRead')}
       </Button>
     </div>
@@ -160,14 +169,15 @@ items-center px-2 w-max"
 <div
   class="flex flex-col list-none flex-1 h-full divide-y divide-slate-200 dark:divide-zinc-900 *:py-4"
 >
-  {#if !data.data || (data.data?.length ?? 0) == 0}
+  {#if !inbox || (inbox?.length ?? 0) == 0}
     <Placeholder
       icon={Inbox}
       title={$t('routes.inbox.empty.title')}
       description={$t('routes.inbox.empty.description')}
+      class="self-center justify-self-center my-auto"
     />
   {:else}
-    {#each data.data as item, index (item.id)}
+    {#each inbox as item, index (item.id)}
       <div
         class="-mx-4 sm:-mx-6 px-4 sm:px-6
         {item.read ? '' : 'bg-yellow-50/50 dark:bg-blue-500/5'}"
@@ -179,7 +189,7 @@ items-center px-2 w-max"
           delay: index * 50,
         }}
       >
-        <InboxItem bind:item />
+        <InboxItem bind:item={inbox[index]} />
       </div>
     {/each}
   {/if}
@@ -190,9 +200,9 @@ items-center px-2 w-max"
     >
       <Tabs routes={[]} class="mx-auto">
         <Pageination
-          hasMore={!(!data.data || (data.data?.length ?? 0) < data.limit)}
+          hasMore={!(!inbox || (inbox?.length ?? 0) < (data?.limit ?? 0))}
           page={data.page}
-          on:change={(p) => searchParam($page.url, 'page', p.detail.toString())}
+          href={(page) => `?page=${page}`}
         />
       </Tabs>
     </div>

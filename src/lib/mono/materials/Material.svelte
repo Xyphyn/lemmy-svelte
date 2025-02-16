@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { createBubbler } from 'svelte/legacy'
+
+  const bubble = createBubbler()
   type Elevation = keyof typeof elevationClass
   type Padding = keyof typeof paddingClass
   type Rounding = keyof typeof roundedClass
@@ -43,29 +46,39 @@
     none: '',
   }
 
-  export let elevation: Elevation = 'flat'
-  export let padding: Padding = 'md'
-  export let rounding: Rounding = 'lg'
-  export let color: Color = 'default'
+  interface Props {
+    elevation?: Elevation
+    padding?: Padding
+    rounding?: Rounding
+    color?: Color
+    element?: string
+    class?: string
+    children?: import('svelte').Snippet
+    [key: string]: any
+  }
 
-  export let element: string = 'div'
+  let {
+    elevation = 'flat',
+    padding = 'md',
+    rounding = 'lg',
+    color = 'default',
+    element = 'div',
+    class: clazz = '',
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
 <svelte:element
   this={element}
-  on:click
-  on:keypress
-  on:keydown
-  on:keyup
-  on:focus
-  {...$$restProps}
+  {...rest}
   class="{elevationClass[elevation]}
   {paddingClass[padding]}
   {roundedClass[rounding]}
   {colorClass[color]}
    text-sm
-  {$$props.class}
+  {clazz}
   "
 >
-  <slot />
+  {@render children?.()}
 </svelte:element>

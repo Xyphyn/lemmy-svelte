@@ -1,8 +1,22 @@
 <script lang="ts">
-  import { userSettings } from '$lib/settings'
+  import { settings } from '$lib/settings.svelte'
   import { contentPadding } from '../Shell.svelte'
 
-  export let pageHeader = false
+  interface Props {
+    pageHeader?: boolean
+    style?: string
+    class?: string
+    children?: import('svelte').Snippet
+    extended?: import('svelte').Snippet
+  }
+
+  let {
+    pageHeader = false,
+    style = '',
+    class: clazz = '',
+    children,
+    extended,
+  }: Props = $props()
 </script>
 
 <div
@@ -15,21 +29,19 @@
   
   "
   style="{pageHeader
-    ? `margin-top: min(-6rem, calc(-1 * calc(${$contentPadding.top}px))); padding-top: max(6rem, calc(${$contentPadding.top}px));`
-    : ''} {$$props.style};
+    ? `margin-top: min(-12rem, calc(-1 * calc(${$contentPadding.top}px))); padding-top: max(12rem, calc(${$contentPadding.top}px));`
+    : ''} {style};
 "
 >
   <h1
     class="text-3xl font-medium flex gap-2 w-full
-  {$userSettings.font == 'satoshi/nunito'
-      ? 'font-display'
-      : ''} {$$props.class ?? ''}"
+  {settings.font == 'satoshi/nunito' ? 'font-display' : ''} {clazz ?? ''}"
   >
-    <slot />
+    {@render children?.()}
   </h1>
-  {#if $$slots.extended}
+  {#if extended}
     <div class="mt-4">
-      <slot name="extended" />
+      {@render extended?.()}
     </div>
   {/if}
 </div>

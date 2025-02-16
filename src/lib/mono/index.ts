@@ -8,12 +8,12 @@ export { default as Spinner } from './loader/Spinner.svelte'
 export { default as Routebar } from './nav/Routebar.svelte'
 export { default as Material } from './materials/Material.svelte'
 
-export { default as Form } from './forms/Form.svelte'
 export { default as Label } from './forms/Label.svelte'
 export { default as FileInput } from './forms/FileInput.svelte'
 export { default as TextInput } from './forms/TextInput.svelte'
 export { default as TextArea } from './forms/TextArea.svelte'
-export { default as Select } from './forms/Select.svelte'
+export { default as Select } from './forms/select/Select.svelte'
+export { default as Option } from './forms/select/Option.svelte'
 export { default as ImageInput } from './forms/ImageInput.svelte'
 
 export { default as Checkbox } from './forms/Checkbox.svelte'
@@ -21,8 +21,6 @@ export { default as Switch } from './forms/Switch.svelte'
 
 export { default as Radio } from './forms/Radio.svelte'
 export { default as RadioGroup } from './forms/RadioGroup.svelte'
-export { default as Choicebox } from './forms/Choicebox.svelte'
-export { default as ChoiceboxGroup } from './forms/ChoiceboxGroup.svelte'
 
 export { default as Popover } from './popover/Popover.svelte'
 export { default as Menu } from './popover/Menu.svelte'

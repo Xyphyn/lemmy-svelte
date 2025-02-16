@@ -5,50 +5,58 @@
   import LabelStat from './LabelStat.svelte'
   import { optimizeImageURL } from '../lemmy/post/helpers'
   import FormattedNumber from '../util/FormattedNumber.svelte'
+  import Expandable from './Expandable.svelte'
+  import { Icon, InformationCircle } from 'svelte-hero-icons'
+  import { t } from '$lib/translations'
+  import Markdown from '../markdown/Markdown.svelte'
+  import EndPlaceholder from './EndPlaceholder.svelte'
 
-  export let avatar: string | undefined = undefined
-  export let name: string
-  export let bio: string | undefined = undefined
-  export let banner: string | undefined = undefined
-  export let url: string | undefined = undefined
-  export let stats: {
+  interface Props {
+    avatar?: string | undefined
     name: string
-    value: string
-    format?: boolean
-  }[] = []
+    bio?: string | undefined
+    banner?: string | undefined
+    url?: string | undefined
+    stats?: {
+      name: string
+      value: string
+      format?: boolean
+    }[]
+    center?: boolean
+    class?: string
+    nameDetail?: import('svelte').Snippet
+    actions?: import('svelte').Snippet
+    children?: import('svelte').Snippet
+    [key: string]: any
+  }
 
-  export let center: boolean = false
+  let {
+    avatar = undefined,
+    name,
+    bio = undefined,
+    banner = undefined,
+    url = undefined,
+    stats = [],
+    center = false,
+    class: clazz = '',
+    nameDetail,
+    actions,
+    children,
+    ...rest
+  }: Props = $props()
 </script>
 
-<Material
-  color="transparent"
-  padding="none"
-  rounding="xl"
-  {...$$restProps}
-  class="z-10 relative border-slate-200 dark:border-zinc-700 {$$props.class}"
->
-  {#if banner || avatar}
-    <div class="max-h-36 overflow-visible">
-      <img
-        src={banner ?? avatar}
-        class="w-full object-cover h-48 rounded-t-xl bg-white dark:bg-zinc-900 banner-mask"
-        class:blur-3xl={!banner}
-        height="192"
-        alt="User banner"
-      />
-    </div>
-    <div
-      class="absolute top-0 left-0 -z-10 object-cover h-full w-full rounded-xl
-      overflow-hidden"
-    >
-      <img
-        src={optimizeImageURL(banner ?? avatar ?? '', 64)}
-        alt=""
-        class="opacity-10 blur-2xl h-full w-full saturate-200"
-      />
-    </div>
+<div {...rest} class="z-10 relative text-sm contents {clazz}">
+  {#if banner}
+    <img
+      src={banner}
+      class="w-full object-cover h-48 rounded-t-xl bg-white dark:bg-zinc-900 rounded-xl"
+      class:blur-3xl={!banner}
+      height="192"
+      alt="User banner"
+    />
   {/if}
-  <div class="p-4 flex flex-col gap-4">
+  <div class="py-4 flex flex-col gap-4">
     <div class="flex-1 flex flex-row items-center text-left gap-4">
       <Avatar
         width={64}
@@ -60,7 +68,7 @@
         <svelte:element
           this={url ? 'a' : 'span'}
           href={url}
-          class="text-2xl font-semibold {url
+          class="text-xl font-semibold {url
             ? 'hover:underline hover:text-primary-900 hover:dark:text-primary-100'
             : ''}"
         >
@@ -69,39 +77,59 @@
         <span
           class="flex items-center gap-0 text-sm text-slate-600 dark:text-zinc-400 max-w-full w-max"
         >
-          <slot name="nameDetail" />
+          {@render nameDetail?.()}
         </span>
 
-        {#if $$slots.actions}
+        {#if actions}
           <div class="flex flex-col mt-2">
-            <slot name="actions" />
+            {@render actions?.()}
           </div>
         {/if}
       </div>
     </div>
     {#if bio}
       <div class="relative w-full {center ? 'text-center' : 'text-left'}">
-        <div
-          class="p-4 relative bg-white/30 dark:bg-zinc-900/30 border border-slate-300
-          dark:border-zinc-800 border-opacity-50 rounded-xl
-          max-w-full w-full"
-        >
-          <PostBody class="text-sm" view="list" body={bio} clickThrough />
-        </div>
+        <Expandable class="py-2">
+          {#snippet title(open)}
+            {#if bio.split('\n')?.[0]?.startsWith('#') || open}
+              {$t('nav.menu.about')}
+            {:else}
+              <div
+                class={[
+                  'overflow-hidden whitespace-nowrap',
+                  'bg-gradient-to-r from-slate-700 via-slate-700 to-slate-700/0',
+                  'dark:from-zinc-400 dark:via-zinc-400 dark:to-zinc-400/0',
+                  'text-transparent bg-clip-text',
+                  'max-w-[50%] overflow-hidden',
+                ]}
+              >
+                {bio.split('\n')?.[0].slice(0, 75)}
+              </div>
+            {/if}
+            <hr class="flex-1 border-slate-200 dark:border-zinc-800 mx-2" />
+            <div class="mr-2 text-primary-900 dark:text-primary-100">
+              {$t('form.post.readMore')}
+            </div>
+          {/snippet}
+          <Markdown source={bio} class="font-normal" />
+        </Expandable>
       </div>
     {/if}
   </div>
-  <div class="space-y-3 p-4 pt-0">
+  <div class="space-y-3 py-4 pt-0">
     {#if stats.length > 0}
-      <div class="text-sm flex flex-row flex-wrap gap-3 mx-auto">
+      <div
+        class="text-sm flex flex-row flex-wrap mx-auto rounded-lg
+        overflow-hidden gap-4"
+      >
         {#each stats as stat}
-          <div
-            class="min-w-36 p-3 px-4 rounded-xl flex-1 bg-white/30 dark:bg-zinc-900/30 border border-slate-300 dark:border-zinc-800 border-opacity-50"
-          >
-            <div class="text-primary-900 dark:text-primary-100">
+          <div class="">
+            <div
+              class="text-primary-900 dark:text-primary-100 text-xs font-medium"
+            >
               {stat.name}
             </div>
-            <div class="text-xl font-semibold">
+            <div class="text-lg font-semibold">
               {#if stat.format ?? true}
                 <FormattedNumber
                   number={Number(stat.value)}
@@ -115,9 +143,9 @@
         {/each}
       </div>
     {/if}
-    <slot />
+    {@render children?.()}
   </div>
-</Material>
+</div>
 
 <style>
   .banner-mask {

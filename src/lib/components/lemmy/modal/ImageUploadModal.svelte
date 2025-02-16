@@ -1,29 +1,38 @@
 <script lang="ts">
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import ProgressBar from '$lib/components/ui/ProgressBar.svelte'
   import { errorMessage } from '$lib/lemmy/error'
   import { t } from '$lib/translations'
-  import { uploadImage } from '$lib/util.js'
+  import { uploadImage } from '$lib/util.svelte.js'
   import { ImageInput, Spinner, toast } from 'mono-svelte'
   import { Button, Modal } from 'mono-svelte'
-  import { createEventDispatcher } from 'svelte'
   import { DocumentPlus, Icon } from 'svelte-hero-icons'
   import { expoOut } from 'svelte/easing'
   import { slide } from 'svelte/transition'
 
-  export let open: boolean
-  export let image: FileList | null = null
-  export let preview: boolean = true
-  export let multiple: boolean = true
-  let progress = 1
+  interface Props {
+    open: boolean
+    image?: FileList | null
+    preview?: boolean
+    multiple?: boolean
+    onupload?: (urls: string[]) => void
+  }
 
-  $: previewURLs =
+  let {
+    open = $bindable(),
+    image = $bindable(null),
+    preview = true,
+    multiple = true,
+    onupload,
+  }: Props = $props()
+  let progress = $state(1)
+
+  let previewURLs = $derived(
     preview && image ? Array.from(image).map(URL.createObjectURL) : undefined
-
-  const dispatcher = createEventDispatcher<{ upload: string[] }>()
+  )
 
   async function upload() {
-    if (!$profile?.jwt || image == null) return
+    if (!profile.data?.jwt || image == null) return
 
     progress = 0
 
@@ -31,7 +40,7 @@
       const uploaded = (
         await Promise.all(
           Array.from(image).map((i) =>
-            uploadImage(i, $profile.instance, $profile.jwt!)
+            uploadImage(i, profile.data.instance, profile.data.jwt!)
               .then((uploaded) => {
                 progress += 1 / (image?.length ?? 0)
                 return uploaded
@@ -46,7 +55,7 @@
 
       if (!uploaded) throw new Error('Image upload returned undefined')
 
-      dispatcher('upload', uploaded)
+      onupload?.(uploaded)
       progress = 1
       open = false
     } catch (err) {
@@ -61,13 +70,21 @@
 </script>
 
 <Modal bind:open>
-  <div slot="title" class="flex items-center gap-2">Upload image</div>
+  {#snippet customTitle()}
+    <div class="flex items-center gap-2">Upload image</div>
+  {/snippet}
   {#if progress != 1}
     <div transition:slide={{ duration: 500, easing: expoOut }} class="w-full">
       <ProgressBar {progress} />
     </div>
   {/if}
-  <form class="flex flex-col gap-4" on:submit|preventDefault={upload}>
+  <form
+    class="flex flex-col gap-4"
+    onsubmit={(e) => {
+      e.preventDefault()
+      upload()
+    }}
+  >
     <label
       for="image-input"
       class="p-4 border-2 border-dashed rounded-xl cursor-pointer transition-colors
@@ -79,10 +96,10 @@
         {multiple ? 'grid-cols-3 grid-rows-2' : 'grid-cols-1 grid-rows-1'}"
         >
           {#each previewURLs as file}
-            <!-- svelte-ignore a11y-missing-attribute -->
+            <!-- svelte-ignore a11y_missing_attribute -->
             <img
               src={file}
-              on:load={() => URL.revokeObjectURL(file)}
+              onload={() => URL.revokeObjectURL(file)}
               alt={file}
               class="w-full rounded-md h-full object-cover transition-all
               border border-slate-200 dark:border-zinc-800 ring-1
@@ -91,9 +108,12 @@
           {/each}
         </div>
       {:else}
-        <div class="flex flex-col justify-center w-full items-center gap-2">
+        <div
+          class="flex flex-col justify-center w-full items-center gap-2
+        text-slate-600 dark:text-zinc-400"
+        >
           <Icon src={DocumentPlus} size="32" />
-          <span>{$t('form.post.selectFile')}</span>
+          <span class="font-medium text-sm">{$t('form.post.selectFile')}</span>
         </div>
       {/if}
       <input

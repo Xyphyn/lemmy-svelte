@@ -1,4 +1,4 @@
-import { client } from '$lib/lemmy'
+import { client } from '$lib/lemmy.svelte'
 import type { SubmissionView } from '$lib/lemmy/contentview.js'
 import type {
   Comment,
@@ -106,7 +106,7 @@ export const removalTemplate = (
     communityLink?: string
     username?: string
     reason?: string
-  }
+  },
 ) => {
   if (content.postTitle) input = input.replaceAll('{{post}}', content.postTitle)
   if (content.communityLink)

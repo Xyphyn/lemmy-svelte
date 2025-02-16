@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { profile } from '$lib/auth'
+  import { profile } from '$lib/auth.svelte.js'
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
   import { publishedToDate } from '$lib/components/util/date.js'
@@ -37,10 +37,7 @@
   function conversationPreviews(
     conversations: PrivateMessageView[]
   ): ConversationPreview[] {
-    const deduplicated = filterDuplicates(
-      conversations.toReversed(),
-      (i) => i.creator.id
-    )
+    const deduplicated = filterDuplicates(conversations, (i) => i.creator.id)
 
     return deduplicated.map((i) => ({
       user: i.creator,
@@ -51,7 +48,7 @@
     }))
   }
 
-  export let data
+  let { data } = $props()
 </script>
 
 <Header pageHeader>
@@ -64,7 +61,7 @@
 {:then data}
   {@const conversations = data.private_messages}
   {@const previews = conversationPreviews(conversations).filter(
-    (c) => c.user.id != $profile?.user?.local_user_view.person.id
+    (c) => c.user.id != profile.data?.user?.local_user_view.person.id
   )}
 
   <ul
@@ -83,9 +80,13 @@
         }}
       >
         <Avatar url={preview.user.avatar} alt={preview.user.name} width={32} />
-        <div class="flex flex-col">
+        <div class="flex flex-col w-full overflow-hidden">
           <div class="font-medium">{preview.user.name}</div>
-          <div class="text-slate-700 dark:text-zinc-300 text-sm">
+          <div
+            class="text-sm overflow-ellipsis whitespace-nowrap
+            bg-gradient-to-r from-slate-700 via-slate-700 to-slate-700/0 dark:from-zinc-300 dark:via-zinc-300 dark:to-zinc-300/0
+            text-transparent bg-clip-text"
+          >
             {preview.message.content}
           </div>
         </div>

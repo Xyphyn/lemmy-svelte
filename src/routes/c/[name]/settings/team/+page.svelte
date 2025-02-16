@@ -1,26 +1,30 @@
 <script lang="ts">
   import UserLink from '$lib/components/lemmy/user/UserLink.svelte'
   import Avatar from '$lib/components/ui/Avatar.svelte'
-  import EditableList from '$lib/components/ui/list/EditableList.svelte'
   import { Icon, Plus, Trash } from 'svelte-hero-icons'
   import type { PageData } from './$types.js'
-  import { profile } from '$lib/auth.js'
+  import { profile } from '$lib/auth.svelte.js'
   import { toast } from 'mono-svelte'
-  import { client, getClient } from '$lib/lemmy.js'
+  import { client, getClient } from '$lib/lemmy.svelte.js'
   import { flip } from 'svelte/animate'
   import { Button, TextInput } from 'mono-svelte'
   import { t } from '$lib/translations.js'
   import Header from '$lib/components/ui/layout/pages/Header.svelte'
 
-  export let data: PageData
-
-  let formData = {
-    newModerator: '',
-    addingModerator: false,
+  interface Props {
+    data: PageData
   }
 
+  let { data: pageData }: Props = $props()
+  let data = $state(pageData)
+
+  let formData = $state({
+    newModerator: '',
+    addingModerator: false,
+  })
+
   async function addModerator() {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     formData.addingModerator = true
 
@@ -77,7 +81,7 @@
   }
 
   async function removeMod(id: number) {
-    if (!$profile?.jwt) return
+    if (!profile.data?.jwt) return
 
     try {
       const res = await getClient().addModToCommunity({
@@ -102,15 +106,7 @@
 </script>
 
 <Header pageHeader>Moderators</Header>
-<EditableList
-  let:action
-  on:action={(e) => {
-    toast({
-      content: `Are you sure you want to remove ${e.detail.name} as a moderator?`,
-      action: () => removeMod(e.detail.id),
-    })
-  }}
->
+<ul class="divide-y divide-slate-200 dark:divide-zinc-800">
   {#each data.community.moderators as moderator (moderator.moderator.id)}
     <div
       class="py-4 flex items-center gap-2 justify-between"
@@ -129,13 +125,27 @@
           </span>
         </div>
       </div>
-      <Button size="square-md" on:click={() => action(moderator.moderator)}>
+      <Button
+        size="square-md"
+        onclick={() => {
+          toast({
+            content: `Are you sure you want to remove ${moderator.moderator.name} as a moderator?`,
+            action: () => removeMod(moderator.moderator.id),
+          })
+        }}
+      >
         <Icon src={Trash} mini size="16" />
       </Button>
     </div>
   {/each}
-</EditableList>
-<form on:submit|preventDefault={addModerator} class="mt-auto flex gap-2 w-full">
+</ul>
+<form
+  onsubmit={(e) => {
+    e.preventDefault()
+    addModerator()
+  }}
+  class="mt-auto flex gap-2 w-full"
+>
   <TextInput
     bind:value={formData.newModerator}
     class="w-full"
@@ -149,6 +159,8 @@
     color="primary"
     submit
   >
-    <Icon slot="prefix" src={Plus} micro size="16" /> Add moderator
+    {#snippet prefix()}
+      <Icon src={Plus} micro size="16" />
+    {/snippet} Add moderator
   </Button>
 </form>

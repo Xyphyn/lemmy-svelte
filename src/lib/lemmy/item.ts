@@ -1,4 +1,4 @@
-import { profile, profileData } from '$lib/auth'
+import { profile, profileData } from '$lib/auth.svelte'
 import type {
   CommentReportView,
   CommentView,
@@ -67,7 +67,7 @@ export const isCommentReport = (item: Result): item is CommentReportView =>
   'comment_report' in item
 
 export const isPrivateMessageReport = (
-  item: Result
+  item: Result,
 ): item is PrivateMessageReportView => 'private_message_report' in item
 
 export interface ResumableItem {
@@ -86,32 +86,30 @@ function resumableStore(limit: number = 10) {
   const { subscribe, set, update } = writable<ResumableItem[]>([])
 
   return {
-    subscribe, set, update,
+    subscribe,
+    set,
+    update,
     add: (item: ResumableItem) => {
-      update(resumables => {
-        if (resumables.find(i => JSON.stringify(i) == JSON.stringify(item))) return resumables
+      update((resumables) => {
+        if (resumables.find((i) => JSON.stringify(i) == JSON.stringify(item)))
+          return resumables
         resumables.unshift(item)
         if (resumables.length > limit) resumables.pop()
         return resumables
       })
-    }
+    },
   }
 }
 
 export let resumables = resumableStore()
 
 export function addFavorite(item: Community, add: boolean = true) {
-  const pd = get(profileData)
-  const p = pd.profiles.find((p) => p.id == get(profile)?.id)
-  if (!p) return
-
-  let favs = p.favorites ?? []
+  let favs = profile.data.favorites ?? []
   if (favs.map((fav) => fav.id).includes(item.id)) if (add) return
   if (!add) {
     favs.splice(favs.map((c) => c.id).indexOf(item.id), 1)
   } else {
     favs.unshift(item)
   }
-  p.favorites = favs
-  profileData.update(() => pd)
+  profile.data.favorites = favs
 }

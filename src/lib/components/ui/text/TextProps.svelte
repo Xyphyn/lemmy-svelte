@@ -1,4 +1,4 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
   const wrapClass = {
     wrap: '',
     'no-wrap': 'overflow-hidden overflow-ellipsis whitespace-nowrap',
@@ -6,11 +6,17 @@
 </script>
 
 <script lang="ts">
-  export let wrap: keyof typeof wrapClass = 'wrap'
+  interface Props {
+    wrap?: keyof typeof wrapClass
+    class?: string
+    children?: import('svelte').Snippet
+  }
 
-  $: classes = `${wrapClass[wrap]} ${$$props.class ?? ''}`
+  let { wrap = 'wrap', class: clazz = '', children }: Props = $props()
+
+  let classes = $derived(`${wrapClass[wrap]} ${clazz ?? ''}`)
 </script>
 
 <span class={classes}>
-  <slot />
+  {@render children?.()}
 </span>

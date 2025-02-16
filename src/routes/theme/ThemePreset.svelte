@@ -1,18 +1,28 @@
 <script lang="ts">
+  import { preventDefault } from 'svelte/legacy'
+
   import { t } from '$lib/translations'
-  import { calculateVars, themeData, type Theme } from '$lib/ui/colors'
+  import {
+    calculateVars,
+    theme as themeData,
+    type Theme,
+  } from '$lib/ui/colors.svelte'
   import { action, Button, Material, modal, TextInput } from 'mono-svelte'
   import { CheckCircle, Icon, Trash } from 'svelte-hero-icons'
 
-  export let theme: Theme
+  interface Props {
+    theme: Theme
+  }
 
-  let editingName = false
+  let { theme = $bindable() }: Props = $props()
+
+  let editingName = $state(false)
 </script>
 
-<button class="h-full" on:click={() => ($themeData.currentTheme = theme.id)}>
+<button class="h-full" onclick={() => (themeData.data.currentTheme = theme.id)}>
   <Material
     padding="none"
-    class="{theme.id == $themeData.currentTheme
+    class="{theme.id == themeData.data.currentTheme
       ? 'ring-2 ring-inset ring-primary-900 dark:ring-primary-100'
       : ''} flex relative cursor-pointer h-full flex-col text-left p-0.5"
     rounding="xl"
@@ -27,12 +37,12 @@
       </div>
       <div
         class="bg-white dark:bg-zinc-900 w-8 h-4 rounded-sm border border-slate-200 dark:border-zinc-800"
-      />
+      ></div>
       <div
         class="w-3 h-3 bg-primary-900 dark:bg-primary-100 rounded-full ml-auto"
-      />
+      ></div>
     </div>
-    {#if theme.id == $themeData.currentTheme}
+    {#if theme.id == themeData.data.currentTheme}
       <Icon
         src={CheckCircle}
         size="20"
@@ -42,12 +52,12 @@
     {/if}
     <div class="px-4 py-2 flex items-center gap-1 justify-between">
       {#if editingName}
-        <form on:submit|preventDefault={() => (editingName = false)}>
+        <form onsubmit={preventDefault(() => (editingName = false))}>
           <TextInput bind:value={theme.name}></TextInput>
         </form>
       {:else}
         <button
-          on:click={() => {
+          onclick={() => {
             if (theme.id > 0) editingName = true
           }}
           class="text-left font-medium text-lg font-display"
@@ -60,7 +70,7 @@
           color="ghost"
           size="square-md"
           class="flex-shrink-0"
-          on:click={() => {
+          onclick={() => {
             modal({
               actions: [
                 action({
@@ -73,13 +83,16 @@
                   content: $t('routes.theme.preset.delete.confirm'),
                   type: 'danger',
                   action: () => {
-                    const index = $themeData.themes
+                    const index = themeData.data.themes
                       .map((t) => t.id)
                       .indexOf(theme.id)
 
-                    $themeData.themes = $themeData.themes.toSpliced(index, 1)
-                    if (theme.id == $themeData.currentTheme) {
-                      $themeData.currentTheme = 0
+                    themeData.data.themes = themeData.data.themes.toSpliced(
+                      index,
+                      1,
+                    )
+                    if (theme.id == themeData.data.currentTheme) {
+                      themeData.data.currentTheme = 0
                     }
                   },
                 }),
@@ -90,7 +103,9 @@
             })
           }}
         >
-          <Icon src={Trash} size="16" mini slot="prefix" />
+          {#snippet prefix()}
+            <Icon src={Trash} size="16" mini />
+          {/snippet}
         </Button>
       {/if}
     </div>

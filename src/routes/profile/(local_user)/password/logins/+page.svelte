@@ -1,17 +1,17 @@
 <script lang="ts">
   import { publishedToDate } from '$lib/components/util/date.js'
   import RelativeDate from '$lib/components/util/RelativeDate.svelte'
-  import { client } from '$lib/lemmy.js'
+  import { client } from '$lib/lemmy.svelte.js'
   import { Checkbox, Material } from 'mono-svelte'
   import { Icon, Key } from 'svelte-hero-icons'
 
   import { UAParser } from 'ua-parser-js'
 
-  export let data
+  let { data } = $props()
 
   let checked: {
     [token: string]: boolean
-  } = {}
+  } = $state({})
 </script>
 
 <Material
@@ -28,7 +28,6 @@
         class="divide-x border-b divide-slate-200 dark:divide-zinc-800 h-12 *:px-4
         bg-slate-50 dark:bg-zinc-900"
       >
-        <th class="w-4"></th>
         <th align="left">User Agent</th>
         <th align="left">IP</th>
         <th align="right" class="w-24">Date</th>
@@ -41,10 +40,6 @@
       {#each data.tokens as token}
         {@const ua = new UAParser(token.user_agent).getResult()}
         <tr class="divide-x *:px-3 divide-slate-200 dark:divide-zinc-800">
-          <td class="!pr-1">
-            <Checkbox bind:checked={checked[token.user_id]} />
-          </td>
-
           <td>
             <div class="text-base">{ua.os.name} {ua.os.version}</div>
             <div class="text-sm">{ua.browser.name}</div>

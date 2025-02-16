@@ -2,7 +2,11 @@
   import Avatar from '$lib/components/ui/Avatar.svelte'
   import type { Community } from 'lemmy-js-client'
 
-  export let community: Community
+  interface Props {
+    community: Community
+  }
+
+  let { community }: Props = $props()
 </script>
 
 <div class="flex flex-row gap-3 items-center">

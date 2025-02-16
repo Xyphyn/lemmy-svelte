@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy'
+
   import { photonify } from '$lib/components/markdown/renderers/plugins'
   import { TextInput } from 'mono-svelte'
 
-  let link = ''
+  let link = $state('')
 
-  $: photonified = photonify(link)
+  let photonified = $derived(photonify(link))
 </script>
 
 <h1 class="font-bold text-2xl">Photonify links</h1>
@@ -16,5 +18,5 @@
     bind:value={link}
     placeholder="https://lemmy.world/post/1"
   />
-  <TextInput label="Output" bind:value={photonified} />
+  <TextInput label="Output" value={photonified} />
 </div>

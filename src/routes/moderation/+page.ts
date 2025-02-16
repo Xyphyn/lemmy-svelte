@@ -1,6 +1,6 @@
-import { profile } from '$lib/auth.js'
+import { profile } from '$lib/auth.svelte'
 import { isAdmin } from '$lib/components/lemmy/moderation/moderation.js'
-import { getClient } from '$lib/lemmy.js'
+import { getClient } from '$lib/lemmy.svelte.js'
 import {
   generalizeCommentReport,
   generalizePostReport,
@@ -18,7 +18,7 @@ export async function load({ url, fetch }) {
   const filter: ReportFilter =
     (url.searchParams.get('filter') as ReportFilter) || 'all'
 
-  const jwt = get(profile)?.jwt
+  const jwt = profile.data?.jwt
 
   if (!jwt) return { type: type, page: page }
 
@@ -37,7 +37,7 @@ export async function load({ url, fetch }) {
     unresolved_only: type == 'unread',
   }
 
-  const admin = get(profile)?.user ? isAdmin(get(profile)!.user!) : false
+  const admin = profile.data?.user ? isAdmin(profile!.data.user!) : false
 
   const [posts, comments, messages] = await Promise.all([
     client.listPostReports({
@@ -53,7 +53,7 @@ export async function load({ url, fetch }) {
     ...posts.post_reports.map(generalizePostReport),
     ...comments.comment_reports.map(generalizeCommentReport),
     ...(messages?.private_message_reports ?? []).map(
-      generalizePrivateMessageReport
+      generalizePrivateMessageReport,
     ),
   ].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
 

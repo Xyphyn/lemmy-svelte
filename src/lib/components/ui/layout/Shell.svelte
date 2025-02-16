@@ -1,10 +1,12 @@
-<script lang="ts" context="module">
+<script lang="ts" module>
+  import { innerWidth } from 'svelte/reactivity/window'
+
   const calculateDockProperties = (
     settings: {
       top: boolean | null
       noGap: boolean | null
     },
-    screenWidth: number
+    screenWidth: number,
   ): {
     noGap: boolean
     top: boolean
@@ -35,7 +37,7 @@
   export const calculatePadding = (
     panel: boolean,
     top: boolean,
-    content: boolean
+    content: boolean,
   ): {
     top: number
     bottom: number
@@ -62,42 +64,76 @@
   }
 
   export let screenWidth = writable(1000)
-  export let dockProps: Readable<ReturnType<typeof calculateDockProperties>> =
-    derived([userSettings, screenWidth], ([$settings, $screenWidth], set) => {
-      set(calculateDockProperties($settings.dock, $screenWidth))
-    })
-  export let contentPadding: Readable<ReturnType<typeof calculatePadding>> =
-    derived(dockProps, ($dockProps, set) =>
-      set(calculatePadding($dockProps.noGap, $dockProps.top, true))
-    )
+
+  let dockProps = $derived(
+    calculateDockProperties(settings.dock, innerWidth.current ?? 1000),
+  )
+  let contentPadding = $derived(
+    calculatePadding(dockProps.noGap, dockProps.top, true),
+  )
+
+  let contentPaddingStore = writable<{
+    top: number
+    bottom: number
+    class: string
+  }>(contentPadding)
+  let dockPropsStore = writable<{
+    noGap: boolean
+    top: boolean
+  }>(dockProps)
+
+  let sidePadding = $derived(
+    calculatePadding(dockProps.noGap, dockProps.top, false),
+  )
+  let topPanel = $derived(dockProps.noGap && dockProps.top)
+
+  export { contentPaddingStore as contentPadding, dockPropsStore as dockProps }
 </script>
 
 <script lang="ts">
-  import { userSettings } from '$lib/settings.js'
-  import { themeVars } from '$lib/ui/colors'
-  import { routes } from '$lib/util.js'
-  import { derived, writable, type Readable, type Writable } from 'svelte/store'
+  import { settings } from '$lib/settings.svelte.js'
+  import { theme } from '$lib/ui/colors.svelte'
+  import { writable, type Readable, type Writable } from 'svelte/store'
+  import type { ClassValue } from 'svelte/elements'
 
-  export let route: { id: string | null } | undefined = undefined
+  interface Props {
+    route?: { id: string | null } | undefined
+    class?: ClassValue
+    children?: import('svelte').Snippet
+    navbar?: import('svelte').Snippet<[any]>
+    sidebar?: import('svelte').Snippet<[any]>
+    main?: import('svelte').Snippet<[any]>
+    suffix?: import('svelte').Snippet<[any]>
+    [key: string]: any
+  }
 
-  $: title = route ? routes[(route.id as keyof typeof routes) ?? ''] : ''
+  let {
+    route = undefined,
+    class: clazz = '',
+    children,
+    navbar,
+    sidebar,
+    main,
+    suffix,
+    ...rest
+  }: Props = $props()
 
-  $: sidePadding = calculatePadding($dockProps.noGap, $dockProps.top, false)
-  $: topPanel = $dockProps.noGap && $dockProps.top
+  $effect(() => {
+    contentPaddingStore.set(contentPadding)
+    dockPropsStore.set(dockProps)
+  })
 </script>
 
-<svelte:window bind:innerWidth={$screenWidth} />
-
 <div
-  {...$$restProps}
-  class="shell bg-slate-50 dark:bg-zinc-950 {$$props.class}"
-  style={$themeVars}
+  {...rest}
+  class="shell bg-slate-50 dark:bg-zinc-950 {clazz}"
+  style={theme.vars}
 >
-  <slot />
+  {@render children?.()}
   <div
     class="
-    {$dockProps.noGap ? '' : 'p-4 max-w-3xl left-1/2 -translate-x-1/2'}
-    {$dockProps.top ? 'top-0' : 'bottom-0'}
+    {dockProps.noGap ? '' : 'p-4 max-w-3xl left-1/2 -translate-x-1/2'}
+    {dockProps.top ? 'top-0' : 'bottom-0'}
     {topPanel ? 'fixed top-0' : 'fixed'}
     w-full z-50 pointer-events-none"
     style="grid-area: navbar;
@@ -105,47 +141,46 @@
     transition-duration: 250ms;
     transition-timing-function: cubic-bezier(0.075, 0.82, 0.165, 1);"
   >
-    <slot
-      name="navbar"
-      class="
-      {$dockProps.noGap
-        ? $dockProps.top
-          ? 'border-b shadow-none rounded-none'
-          : 'border-t rounded-none'
-        : 'border rounded-full'}
+    {@render navbar?.({
+      class: `
+      ${
+        dockProps.noGap
+          ? dockProps.top
+            ? 'border-b shadow-none rounded-none'
+            : 'border-t rounded-none'
+          : 'border rounded-full'
+      }
        
        dark:bg-transparent transition-colors duration-500
-      pointer-events-auto backdrop-blur-xl {topPanel
-        ? 'bg-slate-50/50 dark:bg-zinc-950/90 border-slate-100 dark:border-zinc-900'
-        : `border-slate-200 dark:border-zinc-800 shadow-2xl
-        bg-white/50 dark:bg-zinc-950/70`}"
-      {title}
-      style="transition: border-radius 250ms;"
-    />
+      pointer-events-auto backdrop-blur-xl ${
+        topPanel
+          ? 'bg-slate-50/50 dark:bg-zinc-950/90 border-slate-100 dark:border-zinc-900'
+          : `border-slate-200 dark:border-zinc-800 shadow-2xl
+        bg-white/50 dark:bg-zinc-950/70`
+      }`,
+      style: 'transition: border-radius 250ms;',
+    })}
   </div>
   <div
-    class="content divide-x divide-slate-100 dark:divide-zinc-900 min-h-screen {$userSettings.newWidth
+    class="content divide-x divide-slate-100 dark:divide-zinc-900 min-h-screen {settings.newWidth
       ? 'limit-width'
       : ''}"
   >
-    <slot
-      name="sidebar"
-      class="hidden md:flex sticky top-0 left-0 h-max bg-slate-50 dark:bg-zinc-950
+    {@render sidebar?.({
+      class: `hidden md:flex sticky top-0 left-0 h-max bg-slate-50 dark:bg-zinc-950
       z-40
-      {sidePadding.class}"
-      style="grid-area: sidebar; width: 100% !important;"
-    />
-    <slot
-      name="main"
-      class="w-full bg-slate-25 dark:bg-zinc-925 justify-self-center shadow-sm z-0
-      {$contentPadding.class} main"
-      style="grid-area: main"
-    />
-    <slot
-      name="suffix"
-      class="max-xl:hidden w-full sticky top-0 left-0 max-h-screen bg-slate-50 dark:bg-zinc-950 z-40 {sidePadding.class}"
-      style="grid-area: suffix;"
-    />
+      ${sidePadding.class}`,
+      style: 'grid-area: sidebar; width: 100% !important;',
+    })}
+    {@render main?.({
+      class: `w-full bg-slate-25 dark:bg-zinc-925 justify-self-center shadow-sm z-0
+      ${contentPadding.class} main`,
+      style: 'grid-area: main',
+    })}
+    {@render suffix?.({
+      class: `max-xl:hidden w-full sticky top-0 left-0 max-h-screen bg-slate-50 dark:bg-zinc-950 z-40 ${sidePadding.class}`,
+      style: 'grid-area: suffix;',
+    })}
   </div>
 </div>
 
